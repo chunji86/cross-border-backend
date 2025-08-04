@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>회원가입 - 라쿤글로벌</title>
+  <link rel="stylesheet" href="/styles/common.css" />
+  <style>
+    body { font-family: 'Noto Sans KR', sans-serif; background: #f5f5f5; }
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      background: white;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 0 12px rgba(0, 0, 0, 0.05);
+    }
+    .form-group { margin-bottom: 20px; }
+    label { display: block; margin-bottom: 6px; font-weight: bold; }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      background-color: #4caf50;
+      color: white;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .file-section { display: none; margin-top: 10px; }
+
+    .social-entry {
+      display: flex;
+      gap: 8px;
+      margin-top: 5px;
+      align-items: center;
+    }
+    .social-entry select,
+    .social-entry input {
+      flex: 1;
+      padding: 10px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    .social-entry button {
+      padding: 8px 5px;
+      font-size: 14px;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .social-entry button:hover {
+      background-color: #388e3c;
+    }
+    ul { padding-left: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>회원가입</h2>
+    <form id="signupForm" enctype="multipart/form-data">
+      <div class="form-group">
+        <label>이메일</label>
+        <input type="email" name="email" placeholder="example@example.com" />
+      </div>
+
+      <div class="form-group">
+        <label>전화번호 (선택)</label>
+        <input type="tel" name="phone" placeholder="010-1234-5678" />
+      </div>
+
+      <div class="form-group">
+        <label>비밀번호</label>
+        <input type="password" name="password" required />
+      </div>
+
+      <div class="form-group">
+        <label>역할 선택</label>
+        <select name="role" id="roleSelect" required>
+          <option value="">-- 선택 --</option>
+          <option value="vendor">공급사</option>
+          <option value="influencer">일반 인플루언서</option>
+          <option value="pro_influencer">고급 인플루언서</option>
+          <option value="customer">일반 고객</option>
+        </select>
+      </div>
+
+      <!-- 공급사용 파일 -->
+      <div class="file-section" id="vendorFiles">
+        <div class="form-group">
+          <label>사업자등록증</label>
+          <input type="file" name="businessLicense" />
+        </div>
+        <div class="form-group">
+          <label>사업자 통장</label>
+          <input type="file" name="bankBook" />
+        </div>
+        <div class="form-group">
+          <label>통신판매신고증</label>
+          <input type="file" name="commerceCertificate" />
+        </div>
+      </div>
+
+      <!-- 인플루언서용 파일 -->
+      <div class="file-section" id="influencerFiles">
+        <div class="form-group">
+          <label>통장 사본</label>
+          <input type="file" name="bankCopy" />
+        </div>
+        <div class="form-group">
+          <label>신분증 사본</label>
+          <input type="file" name="idCard" />
+        </div>
+        <div class="form-group">
+          <label>社交 플랫폼 링크</label>
+          <div class="social-entry">
+            <select id="socialPlatform">
+              <option value="YouTube">YouTube</option>
+              <option value="TikTok">TikTok</option>
+              <option value="Instagram">Instagram</option>
+              <option value="Blog">Blog</option>
+              <option value="기타">기타</option>
+            </select>
+            <input type="text" id="socialLinkInput" placeholder="링크 입력" />
+            <button type="button" id="addSocial">+ 추가</button>
+          </div>
+          <ul id="socialList"></ul>
+          <input type="hidden" name="snsLinks" id="socialLinks" />
+        </div>
+      </div>
+
+      <button type="submit">회원가입</button>
+    </form>
+  </div>
+
+  <script>
+    const roleSelect = document.getElementById("roleSelect");
+    const vendorFiles = document.getElementById("vendorFiles");
+    const influencerFiles = document.getElementById("influencerFiles");
+
+    roleSelect.addEventListener("change", () => {
+      vendorFiles.style.display = roleSelect.value === "vendor" ? "block" : "none";
+      influencerFiles.style.display = ["influencer", "pro_influencer"].includes(roleSelect.value) ? "block" : "none";
+    });
+
+    // SNS 링크 추가
+    const platformSelect = document.getElementById("socialPlatform");
+    const linkInput = document.getElementById("socialLinkInput");
+    const addSocial = document.getElementById("addSocial");
+    const socialList = document.getElementById("socialList");
+    const socialLinksField = document.getElementById("socialLinks");
+
+    const links = [];
+
+    addSocial.addEventListener("click", () => {
+      const platform = platformSelect.value;
+      const link = linkInput.value.trim();
+      if (!link) return alert("링크를 입력하세요.");
+
+      const entry = { platform, link };
+      links.push(entry);
+
+      const li = document.createElement("li");
+      li.textContent = `${platform}: ${link}`;
+      socialList.appendChild(li);
+
+      linkInput.value = "";
+      socialLinksField.value = JSON.stringify(links);
+    });
+
+    // 폼 전송
+    const form = document.getElementById("signupForm");
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+
+      try {
+        const res = await fetch("/api/auth/register", {
+          method: "POST",
+          body: formData,
+        });
+
+        const result = await res.json();
+        if (res.ok) {
+          alert("회원가입 성공!");
+          window.location.href = "/frontend/pages/login.html";
+        } else {
+          alert("회원가입 실패: " + result.error);
+        }
+      } catch (err) {
+        console.error("회원가입 오류:", err);
+        alert("서버 오류가 발생했습니다.");
+      }
+    });
+  </script>
+</body>
+</html>

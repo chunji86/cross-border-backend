@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>주문 내역 - 라쿤</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+</head>
+<body class="bg-gray-100">
+  <header class="bg-white shadow p-4">
+    <div class="max-w-5xl mx-auto flex justify-between items-center">
+      <h1 class="text-xl font-bold text-gray-800">📦 주문 내역</h1>
+      <a href="/frontend/pages/shop.html" class="text-sm text-blue-500 hover:underline">쇼핑몰 홈</a>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto bg-white mt-6 p-6 rounded shadow">
+    <h2 class="text-lg font-semibold mb-4">나의 주문 목록</h2>
+    <div id="orders-container">
+      <p class="text-gray-500">불러오는 중...</p>
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("로그인이 필요합니다.");
+        return location.href = "/frontend/pages/login.html";
+      }
+
+      try {
+        const res = await fetch("/api/orders", {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+        const data = await res.json();
+
+        const container = document.getElementById("orders-container");
+        if (data.error || !data.orders || data.orders.length === 0) {
+          container.innerHTML = '<p class="text-gray-500">주문 내역이 없습니다.</p>';
+          return;
+        }
+
+        container.innerHTML = data.orders.map(order => `
+          <div class="border-b border-gray-200 py-4">
+            <h3 class="text-lg font-bold text-gray-800">${order.product?.name || '상품 정보 없음'}</h3>
+            <p class="text-gray-600">수량: ${order.quantity}</p>
+            <p class="text-gray-600">총 금액: ${(order.product?.price * order.quantity).toLocaleString()}원</p>
+            <p class="text-sm text-gray-400">주문일시: ${new Date(order.createdAt).toLocaleString()}</p>
+          </div>
+        `).join("");
+      } catch (err) {
+        console.error("주문 내역 오류:", err);
+        alert("서버 오류가 발생했습니다.");
+      }
+    });
+  </script>
+</body>
+</html>

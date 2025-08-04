@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>공급사/인플루언서 회원가입</title>
+  <link rel="stylesheet" href="/styles/common.css" />
+</head>
+<body>
+  <div class="container">
+    <h2>회원가입 - 공급사 / 인플루언서</h2>
+    <form id="signupForm">
+      <input type="text" name="emailOrPhone" placeholder="이메일 또는 전화번호" required />
+      <input type="password" name="password" placeholder="비밀번호" required />
+      <select name="role" id="role" required>
+        <option value="">역할 선택</option>
+        <option value="vendor">공급사</option>
+        <option value="influencer">일반 인플루언서</option>
+        <option value="adv_influencer">고급 인플루언서</option>
+      </select>
+
+      <div id="fileInputs"></div>
+      <div id="snsLinksSection" class="hidden">
+        <label>SNS 링크</label>
+        <div id="snsLinks"></div>
+        <button type="button" id="addSnsLink">SNS 링크 추가</button>
+      </div>
+
+      <button type="submit">회원가입</button>
+      <p id="errorMessage" style="color: red;"></p>
+    </form>
+  </div>
+
+  <script src="/assets/js/signup.js"></script>
+</body>
+</html>

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>관리자 대시보드 - 라쿤</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Pretendard', sans-serif;
+      background-color: #f8fafc;
+      display: flex;
+    }
+    .sidebar {
+      width: 240px;
+      background-color: #1e293b;
+      height: 100vh;
+      padding: 2rem 1rem;
+      color: white;
+    }
+    .sidebar h2 {
+      margin-bottom: 2rem;
+      text-align: center;
+      font-size: 1.5rem;
+      color: #fbbf24;
+    }
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+    }
+    .sidebar li {
+      margin-bottom: 1rem;
+    }
+    .sidebar a {
+      color: white;
+      text-decoration: none;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .sidebar a:hover {
+      text-decoration: underline;
+    }
+    .logout {
+      margin-top: 3rem;
+      padding: 0.5rem 1rem;
+      background: #ef4444;
+      border: none;
+      color: white;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      width: 100%;
+    }
+    .content {
+      flex: 1;
+      padding: 2rem;
+    }
+    .content h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      color: #1e293b;
+    }
+    .content-section {
+      background-color: white;
+      padding: 1.5rem;
+      border-radius: 0.75rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    th, td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 0.375rem;
+      background-color: #3b82f6;
+      color: white;
+      cursor: pointer;
+      margin-right: 0.5rem;
+    }
+    button:hover {
+      background-color: #2563eb;
+    }
+    input[type="text"], input[type="number"] {
+      padding: 0.25rem 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 0.25rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <h2>RAKOON ADMIN</h2>
+    <ul>
+      <li><a onclick="loadPage('withdrawals')">출금 승인</a></li>
+      <li><a onclick="loadPage('products')">상품 관리</a></li>
+      <li><a onclick="loadPage('users')">회원 관리</a></li>
+    </ul>
+    <button class="logout" onclick="logout()">로그아웃</button>
+  </div>
+
+  <div class="content">
+    <h1>관리자 대시보드</h1>
+    <div class="content-section" id="adminContent">
+      기능을 선택해주세요.
+    </div>
+  </div>
+
+  <script>
+    function logout() {
+      localStorage.removeItem("token");
+      alert("로그아웃 되었습니다.");
+      window.location.href = "/admin-login.html";
+    }
+
+    async function loadPage(section) {
+      const content = document.getElementById("adminContent");
+
+      if (section === "withdrawals") {
+        content.innerHTML = "<h2>출금 승인</h2><p>불러오는 중...</p>";
+        try {
+          const res = await fetch("/api/withdrawals/pending", {
+            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          });
+          const data = await res.json();
+          if (!res.ok) return content.innerHTML = `<p>${data.error || "불러오기 실패"}</p>`;
+          if (data.length === 0) return content.innerHTML = "<p>승인 대기 출금 없음</p>";
+
+          let html = `<table><thead><tr><th>신청자</th><th>금액</th><th>계좌정보</th><th>신청일</th><th>승인</th></tr></thead><tbody>`;
+          data.forEach((item) => {
+            html += `<tr>
+              <td>${item.user.name || item.user.email}</td>
+              <td>₩${item.amount.toLocaleString()}</td>
+              <td>${item.accountInfo}</td>
+              <td>${new Date(item.createdAt).toLocaleDateString()}</td>
+              <td><button onclick="approveWithdrawal(${item.id})">승인</button></td>
+            </tr>`;
+          });
+          html += "</tbody></table>";
+          content.innerHTML = html;
+        } catch (err) {
+          content.innerHTML = "<p>데이터 로딩 실패</p>";
+        }
+      }
+
+      else if (section === "products") {
+        content.innerHTML = "<h2>상품 관리</h2><p>불러오는 중...</p>";
+        try {
+          const res = await fetch("/api/products", {
+            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          });
+          const data = await res.json();
+          if (!res.ok) return content.innerHTML = `<p>${data.error || "불러오기 실패"}</p>`;
+          if (data.length === 0) return content.innerHTML = "<p>등록된 상품 없음</p>";
+
+          let html = `<table><thead><tr><th>상품명</th><th>가격</th><th>수정</th><th>삭제</th></tr></thead><tbody>`;
+          data.forEach((item) => {
+            html += `<tr>
+              <td><input type="text" value="${item.name}" id="name-${item.id}" /></td>
+              <td><input type="number" value="${item.price}" id="price-${item.id}" /></td>
+              <td><button onclick="updateProduct(${item.id})">수정</button></td>
+              <td><button onclick="deleteProduct(${item.id})">삭제</button></td>
+            </tr>`;
+          });
+          html += "</tbody></table>";
+          content.innerHTML = html;
+        } catch (err) {
+          content.innerHTML = "<p>데이터 로딩 실패</p>";
+        }
+      }
+
+      else if (section === "users") {
+        content.innerHTML = "<h2>회원 목록</h2><p>불러오는 중...</p>";
+        try {
+          const res = await fetch("/api/users", {
+            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          });
+          const data = await res.json();
+          if (!res.ok) return content.innerHTML = `<p>${data.error || "불러오기 실패"}</p>`;
+          if (data.length === 0) return content.innerHTML = "<p>등록된 회원 없음</p>";
+
+          let html = `<table><thead><tr><th>이름/이메일</th><th>역할</th><th>가입일</th></tr></thead><tbody>`;
+          data.forEach((user) => {
+            html += `<tr>
+              <td>${user.name || user.email}</td>
+              <td>${user.role}</td>
+              <td>${new Date(user.createdAt).toLocaleDateString()}</td>
+            </tr>`;
+          });
+          html += "</tbody></table>";
+          content.innerHTML = html;
+        } catch (err) {
+          content.innerHTML = "<p>데이터 로딩 실패</p>";
+        }
+      }
+    }
+
+    async function approveWithdrawal(id) {
+      if (!confirm("출금 승인할까요?")) return;
+      const res = await fetch(`/api/withdrawals/${id}/approve`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      if (res.ok) {
+        alert("승인 완료");
+        loadPage("withdrawals");
+      } else {
+        alert("승인 실패");
+      }
+    }
+
+    async function deleteProduct(id) {
+      if (!confirm("정말 삭제하시겠습니까?")) return;
+      const res = await fetch(`/api/products/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      if (res.ok) {
+        alert("삭제 완료");
+        loadPage("products");
+      } else {
+        alert("삭제 실패");
+      }
+    }
+
+    async function updateProduct(id) {
+      const name = document.getElementById(`name-${id}`).value;
+      const price = parseInt(document.getElementById(`price-${id}`).value);
+      if (!name || isNaN(price)) return alert("입력값 오류");
+
+      const res = await fetch(`/api/products/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({ name, price }),
+      });
+
+      if (res.ok) {
+        alert("수정 완료");
+        loadPage("products");
+      } else {
+        alert("수정 실패");
+      }
+    }
+  </script>
+  <script src="/assets/js/withdrawal-approval.js"></script>
+</body>
+</html>

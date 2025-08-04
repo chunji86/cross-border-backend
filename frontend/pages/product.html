@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>상품 상세 - 라쿤</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="/frontend/assets/js/auth.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <header class="bg-white shadow p-4">
+    <div class="max-w-5xl mx-auto flex justify-between items-center">
+      <h1 class="text-xl font-bold text-gray-800">🛍️ 상품 상세보기</h1>
+      <a href="/frontend/pages/index.html" class="text-sm text-blue-500 hover:underline">홈으로</a>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 py-8">
+    <div id="product-container" class="bg-white p-6 rounded-lg shadow-md">
+      <!-- 상품 정보가 여기에 삽입됩니다 -->
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const productId = urlParams.get("id");
+
+      if (!productId) {
+        alert("상품 ID가 없습니다.");
+        window.location.href = "/frontend/pages/index.html";
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/products/${productId}`);
+        const product = await res.json();
+
+        if (product.error) {
+          document.getElementById("product-container").innerHTML = `<p class="text-red-500">${product.error}</p>`;
+          return;
+        }
+
+        const container = document.getElementById("product-container");
+        container.innerHTML = `
+          <img src="${product.imageUrl}" alt="${product.name}" class="w-full h-80 object-cover rounded-lg mb-6" />
+          <h2 class="text-2xl font-semibold mb-2">${product.name}</h2>
+          <p class="text-gray-600 mb-2">${product.description}</p>
+          <p class="text-lg font-bold text-gray-800 mb-2">가격: ${product.price.toLocaleString()}원</p>
+          <p class="text-sm text-green-600 mb-6">리워드율: ${Math.round(product.rewardRate * 100)}%</p>
+          <div class="flex space-x-4">
+            <button onclick="orderProduct(${product.id})" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded">
+              구매하기
+            </button>
+            <button onclick='addToCart(${JSON.stringify(product)})' class="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-white rounded">
+              장바구니에 담기
+            </button>
+          </div>
+        `;
+      } catch (err) {
+        console.error("상품 조회 실패:", err);
+        alert("서버 오류가 발생했습니다.");
+      }
+    });
+
+    async function orderProduct(productId) {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("로그인 후 이용해주세요.");
+        window.location.href = "/frontend/pages/login.html";
+        return;
+      }
+
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ productId })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert("주문이 완료되었습니다!");
+        window.location.href = "/frontend/pages/index.html";
+      } else {
+        alert(data.error || "주문 실패");
+      }
+    }
+
+    // ✅ 장바구니 담기 함수 (로컬스토리지 활용)
+    function addToCart(product) {
+      const cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+      const existingItem = cart.find(item => item.id === product.id);
+      if (existingItem) {
+        existingItem.quantity += 1;
+      } else {
+        cart.push({
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          imageUrl: product.imageUrl,
+          quantity: 1
+        });
+      }
+
+      localStorage.setItem("cart", JSON.stringify(cart));
+      alert("장바구니에 상품이 담겼습니다!");
+    }
+  </script>
+</body>
+</html>

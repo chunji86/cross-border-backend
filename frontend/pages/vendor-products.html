@@ -1,0 +1,93 @@
+<!-- frontend/pages/vendor-products.html -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>내 상품 목록</title>
+  <link rel="stylesheet" href="../assets/css/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>📋 내 상품 목록</h1>
+    <nav>
+      <a href="vendor_add_product.html">➕ 상품 등록</a>
+      <a href="index.html">🏠 홈</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <table id="productTable" class="styled-table">
+      <thead>
+        <tr>
+          <th>상품명</th>
+          <th>가격</th>
+          <th>재고</th>
+          <th>리워드율</th>
+          <th>등록일</th>
+          <th>수정/삭제</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div id="message" class="result-box"></div>
+  </main>
+
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script>
+    const tbody = document.querySelector('#productTable tbody');
+    const messageBox = document.getElementById('message');
+
+    async function fetchMyProducts() {
+      try {
+        const res = await api.get('/products/my');
+        tbody.innerHTML = '';
+
+        if (!res.products || res.products.length === 0) {
+          messageBox.textContent = '등록된 상품이 없습니다.';
+          return;
+        }
+
+        res.products.forEach(p => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${p.name}</td>
+            <td>${p.price.toLocaleString()}원</td>
+            <td>${p.stock}</td>
+            <td>${(p.rewardRate * 100).toFixed(1)}%</td>
+            <td>${new Date(p.createdAt).toLocaleDateString()}</td>
+            <td>
+              <button onclick="editProduct(${p.id})">수정</button>
+              <button onclick="deleteProduct(${p.id})">삭제</button>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+      } catch (err) {
+        console.error(err);
+        messageBox.textContent = '상품 조회 실패';
+      }
+    }
+
+    async function deleteProduct(id) {
+      if (!confirm('정말 삭제하시겠습니까?')) return;
+
+      try {
+        await api.del(`/products/${id}`);
+        messageBox.textContent = '✅ 상품이 삭제되었습니다.';
+        fetchMyProducts();
+      } catch (err) {
+        console.error(err);
+        messageBox.textContent = '❌ 삭제 실패';
+      }
+    }
+
+    function editProduct(id) {
+      alert(`수정 기능은 아직 구현되지 않았습니다. (상품 ID: ${id})`);
+      // 추후 수정 화면으로 이동하도록 구현 예정
+    }
+
+    fetchMyProducts();
+  </script>
+</body>
+</html>

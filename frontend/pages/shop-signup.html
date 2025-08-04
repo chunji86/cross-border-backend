@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>고객 회원가입</title>
+  <link rel="stylesheet" href="/styles/common.css">
+</head>
+<body class="bg-gray-100">
+  <div class="max-w-md mx-auto mt-10 bg-white p-6 rounded shadow">
+    <h2 class="text-2xl font-bold mb-6 text-center">고객 회원가입</h2>
+    <form id="shopSignupForm" enctype="multipart/form-data">
+      <label class="block font-semibold">이메일 또는 전화번호</label>
+      <input type="text" name="emailOrPhone" class="w-full border px-3 py-2 mb-4" required />
+
+      <label class="block font-semibold">비밀번호</label>
+      <input type="password" name="password" class="w-full border px-3 py-2 mb-4" required />
+
+      <p id="errorMessage" class="text-red-500 text-sm mb-4"></p>
+
+      <button type="submit" class="w-full bg-blue-500 text-white py-2 rounded">회원가입</button>
+    </form>
+    <p class="mt-4 text-center">
+      이미 계정이 있으신가요? <a href="/frontend/pages/login.html" class="text-blue-500">로그인</a>
+    </p>
+  </div>
+
+  <script src="/assets/shop-signup.js"></script>
+</body>
+</html>

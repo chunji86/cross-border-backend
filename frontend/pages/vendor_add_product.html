@@ -1,0 +1,83 @@
+<!-- ✅ 수정된 vendor_add_product.html -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>공급사 상품 등록 | 라쿤</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-100 min-h-screen">
+  <div class="max-w-3xl mx-auto p-6">
+    <h1 class="text-2xl font-bold mb-6">공급사 상품 등록</h1>
+
+    <!-- ✅ 상단 메뉴 -->
+    <nav id="navbar" class="mb-6 text-blue-600 font-semibold space-x-4"></nav>
+
+    <!-- ✅ 상품 등록 폼 -->
+    <form id="productForm" class="bg-white p-6 rounded shadow-md space-y-4">
+      <div>
+        <label class="block font-semibold mb-1">상품명</label>
+        <input type="text" name="title" required class="w-full border rounded px-3 py-2" />
+      </div>
+      <div>
+        <label class="block font-semibold mb-1">설명</label>
+        <textarea name="description" required class="w-full border rounded px-3 py-2"></textarea>
+      </div>
+      <div>
+        <label class="block font-semibold mb-1">가격</label>
+        <input type="number" name="price" required class="w-full border rounded px-3 py-2" />
+      </div>
+      <div>
+        <label class="block font-semibold mb-1">재고 수량</label>
+        <input type="number" name="stock" required class="w-full border rounded px-3 py-2" />
+      </div>
+      <div>
+        <label class="block font-semibold mb-1">배송비</label>
+        <input type="number" name="shippingFee" required class="w-full border rounded px-3 py-2" />
+      </div>
+      <div>
+        <label class="block font-semibold mb-1">리워드율 (%)</label>
+        <input type="number" name="rewardRate" step="0.1" min="0" max="100" required class="w-full border rounded px-3 py-2" />
+        <p class="text-sm text-gray-500 mt-1">판매가 대비 지급할 리워드 비율을 입력하세요 (예: 10)</p>
+      </div>
+      <div>
+        <label class="block font-semibold mb-1">상품 이미지</label>
+        <input type="file" name="image" accept="image/*" required class="w-full" />
+      </div>
+      <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+        상품 등록
+      </button>
+    </form>
+
+    <div id="message" class="mt-4 text-center text-red-500"></div>
+  </div>
+
+  <!-- ✅ 모듈 방식으로 스크립트 로드 -->
+  <script type="module">
+  import { api } from '/frontend/scripts/api.js';
+
+  document.getElementById('productForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+
+    try {
+      const res = await api.upload('/api/products', formData);
+      if (res.ok) {
+        alert('상품이 등록되었습니다.');
+        form.reset();
+      } else {
+        const data = await res.json();
+        document.getElementById('message').textContent = data.error || '등록 실패';
+      }
+    } catch (err) {
+      console.error(err);
+      document.getElementById('message').textContent = '서버 오류 발생';
+    }
+  });
+</script>
+
+</body>
+</html>

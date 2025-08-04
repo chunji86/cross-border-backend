@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>마이샵 상품 목록</title>
+  <link rel="stylesheet" href="/styles/common.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>내 마이샵 상품 목록</h1>
+    <div id="product-list" class="product-list"></div>
+  </div>
+
+  <!-- 공유 링크 모달 -->
+  <div id="linkModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <span id="closeModal" class="close">&times;</span>
+      <h2>공유 링크</h2>
+      <p id="linkText"></p>
+      <button id="copyButton">복사하기</button>
+    </div>
+  </div>
+
+  <script type="module" src="/scripts/myshop-view.js"></script>
+</body>
+</html>

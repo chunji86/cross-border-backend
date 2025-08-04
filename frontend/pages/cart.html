@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>장바구니 - 라쿤</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <script src="/frontend/assets/js/auth.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <header class="bg-white shadow p-4">
+    <div class="max-w-5xl mx-auto flex justify-between items-center">
+      <h1 class="text-xl font-bold text-gray-800">🛒 장바구니</h1>
+      <a href="/frontend/pages/shop.html" class="text-sm text-blue-500 hover:underline">← 쇼핑 계속하기</a>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 py-8">
+    <div id="cart-list" class="space-y-6">
+      <!-- JS로 장바구니 상품들이 렌더링됩니다 -->
+    </div>
+
+    <div class="mt-10 text-right">
+      <p id="total-price" class="text-lg font-semibold mb-4">총 합계: 0원</p>
+      <button id="order-btn" class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg">
+        주문하기
+      </button>
+    </div>
+  </main>
+
+  <script type="module" src="../scripts/cart.js"></script>
+</body>
+</html>

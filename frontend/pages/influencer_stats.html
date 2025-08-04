@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>리워드 통계 - 인플루언서</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+</head>
+<body class="bg-gray-100">
+  <header class="bg-white shadow p-4">
+    <div class="max-w-5xl mx-auto flex justify-between items-center">
+      <h1 class="text-xl font-bold text-gray-800">📊 인플루언서 리워드 통계</h1>
+      <a href="/frontend/pages/index.html" class="text-sm text-blue-500 hover:underline">홈으로</a>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto p-6">
+    <div class="bg-white p-6 rounded shadow">
+      <h2 class="text-lg font-semibold mb-4">최근 7일간 리워드 추이</h2>
+      <canvas id="rewardChart" height="120"></canvas>
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return location.href = "/frontend/pages/login.html";
+
+      try {
+        const res = await fetch("/api/rewards/history", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const result = await res.json();
+
+        const labels = result.map(r => new Date(r.date).toLocaleDateString());
+        const data = result.map(r => r.totalAmount);
+
+        new Chart(document.getElementById("rewardChart"), {
+          type: "line",
+          data: {
+            labels,
+            datasets: [{
+              label: "일별 리워드 합계 (원)",
+              data,
+              fill: true,
+              backgroundColor: "rgba(59,130,246,0.2)",
+              borderColor: "rgba(59,130,246,1)",
+              tension: 0.3
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { position: 'top' }
+            }
+          }
+        });
+      } catch (err) {
+        console.error("리워드 데이터 오류:", err);
+        alert("통계 데이터를 불러오지 못했습니다.");
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>마이샵 상품 수정</title>
+  <link rel="stylesheet" href="/styles/common.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>마이샵 상품 수정</h1>
+
+    <form id="editForm">
+      <input type="hidden" id="influencerProductId" />
+
+      <div class="form-group">
+        <label for="title">상품명</label>
+        <input type="text" id="title" name="title" required />
+      </div>
+
+      <div class="form-group">
+        <label for="description">설명</label>
+        <textarea id="description" name="description" rows="4"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="price">판매가</label>
+        <input type="number" id="price" name="price" required min="0" />
+      </div>
+
+      <div class="form-group">
+        <label for="image">상품 이미지</label>
+        <input type="file" id="image" name="image" accept="image/*" />
+        <img id="preview" src="#" alt="미리보기" style="max-width: 200px; display: none;" />
+      </div>
+
+      <button type="submit">수정 완료</button>
+    </form>
+
+    <!-- ✅ 삭제 버튼 -->
+    <button id="deleteButton" class="delete-button" style="margin-top: 20px; background: crimson; color: white; padding: 10px; border: none; cursor: pointer;">
+      삭제
+    </button>
+  </div>
+
+  <!-- ✅ JS 스크립트 삽입 -->
+  <script type="module" src="/scripts/myshop-edit.js"></script>
+  <script type="module" src="/scripts/myshop-delete.js"></script>
+</body>
+</html>

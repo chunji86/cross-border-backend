@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>주문하기 - 라쿤</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+  <header class="bg-white shadow p-4">
+    <div class="max-w-5xl mx-auto flex justify-between items-center">
+      <h1 class="text-xl font-bold text-gray-800">🧾 주문하기</h1>
+      <a href="/frontend/pages/shop.html" class="text-sm text-blue-500 hover:underline">쇼핑몰 홈</a>
+    </div>
+  </header>
+
+  <main class="max-w-3xl mx-auto bg-white mt-6 p-6 rounded shadow">
+    <div id="product-info">
+      <p class="text-gray-500">상품 정보를 불러오는 중...</p>
+    </div>
+
+    <div class="mt-6">
+      <label for="quantity" class="block mb-2 text-sm font-medium text-gray-700">수량 선택</label>
+      <input type="number" id="quantity" value="1" min="1" class="w-20 p-2 border rounded" />
+    </div>
+
+    <div class="mt-6 text-lg font-semibold" id="total-price">총 결제금액: 계산 중...</div>
+
+    <button onclick="submitOrder()" class="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">주문하기</button>
+  </main>
+
+  <script>
+    let product = null;
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      const params = new URLSearchParams(window.location.search);
+      const productId = params.get("id");
+      if (!productId) {
+        alert("상품 ID가 없습니다.");
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/products/${productId}`);
+        product = await res.json();
+        renderProduct(product);
+      } catch (err) {
+        console.error("상품 로드 오류:", err);
+      }
+    });
+
+    function renderProduct(product) {
+      document.getElementById("product-info").innerHTML = `
+        <h2 class="text-2xl font-bold text-gray-800">${product.name}</h2>
+        <p class="text-gray-700 mt-2">${product.description}</p>
+        <p class="mt-4 text-lg font-semibold text-gray-900">단가: ${product.price.toLocaleString()}원</p>
+      `;
+      updateTotal();
+    }
+
+    document.getElementById("quantity").addEventListener("input", updateTotal);
+
+    function updateTotal() {
+      const qty = parseInt(document.getElementById("quantity").value || 1);
+      if (!product) return;
+      const total = qty * product.price;
+      document.getElementById("total-price").innerText = `총 결제금액: ${total.toLocaleString()}원`;
+    }
+
+    async function submitOrder() {
+      const qty = parseInt(document.getElementById("quantity").value || 1);
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("로그인이 필요합니다.");
+        return location.href = "/frontend/pages/login.html";
+      }
+
+      try {
+        const res = await fetch("/api/orders", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({ productId: product.id, quantity: qty })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          alert("주문이 완료되었습니다!");
+          location.href = "/frontend/pages/shop.html";
+        } else {
+          alert(data.error || "주문 실패");
+        }
+      } catch (err) {
+        console.error("주문 오류:", err);
+        alert("서버 오류가 발생했습니다.");
+      }
+    }
+  </script>
+</body>
+</html>

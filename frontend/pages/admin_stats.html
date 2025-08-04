@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>관리자 성과 요약</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+</head>
+<body class="bg-gray-100">
+  <header class="bg-white shadow p-4">
+    <div class="max-w-5xl mx-auto flex justify-between items-center">
+      <h1 class="text-xl font-bold text-gray-800">📊 관리자 전체 성과 요약</h1>
+      <a href="/frontend/pages/admin-dashboard.html" class="text-sm text-blue-500 hover:underline">대시보드로</a>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto p-6 grid gap-8">
+    <div class="bg-white p-6 rounded shadow">
+      <h2 class="text-lg font-semibold mb-4">주문 수 요약</h2>
+      <canvas id="orderChart" height="100"></canvas>
+    </div>
+    <div class="bg-white p-6 rounded shadow">
+      <h2 class="text-lg font-semibold mb-4">사용자 역할별 비율</h2>
+      <canvas id="userChart" height="100"></canvas>
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return location.href = "/frontend/pages/login.html";
+
+      try {
+        const res = await fetch("/api/admin/summary", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+
+        new Chart(document.getElementById("orderChart"), {
+          type: "line",
+          data: {
+            labels: data.orderStats.map(stat => stat.date),
+            datasets: [{
+              label: "주문 수",
+              data: data.orderStats.map(stat => stat.count),
+              fill: false,
+              borderColor: "#3b82f6",
+              tension: 0.3
+            }]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              y: { beginAtZero: true }
+            }
+          }
+        });
+
+        new Chart(document.getElementById("userChart"), {
+          type: "pie",
+          data: {
+            labels: ["고객", "인플루언서", "공급사", "관리자"],
+            datasets: [{
+              data: [data.users.customer, data.users.influencer, data.users.vendor, data.users.admin],
+              backgroundColor: ["#facc15", "#34d399", "#60a5fa", "#f87171"]
+            }]
+          }
+        });
+      } catch (err) {
+        console.error("관리자 요약 오류:", err);
+        alert("요약 데이터를 불러오지 못했습니다.");
+      }
+    });
+  </script>
+</body>
+</html>

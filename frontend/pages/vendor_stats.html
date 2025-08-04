@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>성과 분석 - 공급사</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+</head>
+<body class="bg-gray-100">
+  <header class="bg-white shadow p-4">
+    <div class="max-w-5xl mx-auto flex justify-between items-center">
+      <h1 class="text-xl font-bold text-gray-800">📈 공급사 성과 분석</h1>
+      <a href="/frontend/pages/index.html" class="text-sm text-blue-500 hover:underline">홈으로</a>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto p-6">
+    <div class="bg-white p-6 rounded shadow">
+      <h2 class="text-lg font-semibold mb-4">최근 7일간 상품별 판매량</h2>
+      <canvas id="vendorChart" height="120"></canvas>
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return location.href = "/frontend/pages/login.html";
+
+      try {
+        const res = await fetch("/api/products/vendor-stats", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const result = await res.json();
+
+        const labels = result.map(p => p.name);
+        const data = result.map(p => p.totalSold);
+
+        new Chart(document.getElementById("vendorChart"), {
+          type: "bar",
+          data: {
+            labels,
+            datasets: [{
+              label: "판매량",
+              data,
+              backgroundColor: "rgba(34,197,94,0.6)",
+              borderColor: "rgba(34,197,94,1)",
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              y: { beginAtZero: true }
+            }
+          }
+        });
+      } catch (err) {
+        console.error("공급사 통계 오류:", err);
+        alert("통계 데이터를 불러오지 못했습니다.");
+      }
+    });
+  </script>
+</body>
+</html>

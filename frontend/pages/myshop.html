@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>마이샵 관리</title>
+  <link rel="stylesheet" href="../assets/css/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>🛍️ 내 마이샵</h1>
+    <nav>
+      <a href="index.html">🏠 메인</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section>
+      <h2>마이샵 상품 목록</h2>
+      <div id="product-list" class="product-grid"></div>
+      <p id="empty-message" style="color: gray;"></p>
+    </section>
+  </main>
+
+  <script src="../assets/js/api.js"></script>
+  <script src="../assets/js/auth.js"></script>
+  <script>
+    const productList = document.getElementById('product-list');
+    const emptyMessage = document.getElementById('empty-message');
+
+    async function loadMyShopItems() {
+      try {
+        const res = await api.get('/myshop');
+        productList.innerHTML = '';
+
+        if (!res.products || res.products.length === 0) {
+          emptyMessage.textContent = '마이샵에 등록된 상품이 없습니다.';
+          return;
+        }
+
+        res.products.forEach(p => {
+          const item = document.createElement('div');
+          item.className = 'product-card';
+          item.innerHTML = `
+            <h3>${p.name}</h3>
+            <p>가격: ${p.price.toLocaleString()}원</p>
+            <p>리워드율: ${(p.rewardRate * 100).toFixed(1)}%</p>
+            <a href="product.html?id=${p.id}" class="view-button">상품 보기</a>
+          `;
+          productList.appendChild(item);
+        });
+      } catch (err) {
+        console.error(err);
+        emptyMessage.textContent = '데이터 불러오기 실패';
+      }
+    }
+
+    loadMyShopItems();
+  </script>
+</body>
+</html>
