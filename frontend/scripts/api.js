@@ -1,5 +1,4 @@
 // frontend/scripts/api.js
-
 export const api = {
   async get(url) {
     const token = localStorage.getItem('token');
@@ -23,7 +22,6 @@ export const api = {
       body: JSON.stringify(data)
     });
 
-    // ✅ JSON이 아닌 경우에도 오류로 처리
     const contentType = res.headers.get('content-type');
     if (!res.ok) {
       const errorText = await res.text();
@@ -35,6 +33,21 @@ export const api = {
     } else {
       throw new Error('Invalid JSON response');
     }
+  },
+
+  async put(url, data) {
+    const token = localStorage.getItem('token');
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
   },
 
   async upload(url, formData) {

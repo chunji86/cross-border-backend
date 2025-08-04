@@ -1,42 +1,57 @@
+// frontend/scripts/include.js
+
 import { auth } from './auth.js';
 
-export async function loadPartials(callback) {
-  const headerHTML = await fetch('/partials/header.html').then(res => res.text());
-  const footerHTML = await fetch('/partials/footer.html').then(res => res.text());
-  document.body.insertAdjacentHTML('afterbegin', headerHTML);
-  document.body.insertAdjacentHTML('beforeend', footerHTML);
+document.addEventListener('DOMContentLoaded', async () => {
+  // 공통 헤더/푸터 동적 삽입
+  await includeHTML();
 
-  // ✅ 로그인 상태 UI 적용 및 버튼 이벤트 등록
+  // 로그인 상태에 따른 메뉴 표시 변경
   const loginBtn = document.getElementById('login-btn');
   const signupBtn = document.getElementById('signup-btn');
   const logoutBtn = document.getElementById('logout-btn');
   const usernameSpan = document.getElementById('username');
 
-  const ordersBtn = document.getElementById('orders-btn');
-  const recentBtn = document.getElementById('recent-btn');
-  const supportBtn = document.getElementById('support-btn');
-
   const user = auth.getUser();
 
-  if (user) {
-    loginBtn.style.display = 'none';
-    signupBtn.style.display = 'none';
-    logoutBtn.style.display = 'inline-block';
-    usernameSpan.style.display = 'inline-block';
-    usernameSpan.textContent = `${user.name}님`;
-  }
-
-  // ✅ 버튼 동작 연결
-  if (loginBtn) loginBtn.onclick = () => location.href = 'login.html';
-  if (signupBtn) signupBtn.onclick = () => location.href = 'signup.html';
-  if (logoutBtn) logoutBtn.onclick = () => {
+  if (auth.isTokenExpired()) {
     auth.logout();
     location.reload();
-  };
+    return;
+  }
 
-  if (ordersBtn) ordersBtn.onclick = () => location.href = 'orders.html';
-  if (recentBtn) recentBtn.onclick = () => location.href = 'recent.html';
-  if (supportBtn) supportBtn.onclick = () => location.href = 'support.html';
+  if (user) {
+    if (loginBtn) loginBtn.style.display = 'none';
+    if (signupBtn) signupBtn.style.display = 'none';
+    if (logoutBtn) logoutBtn.style.display = 'inline-block';
+    if (usernameSpan) usernameSpan.textContent = `${user.name || user.email}`;
+  } else {
+    if (loginBtn) loginBtn.style.display = 'inline-block';
+    if (signupBtn) signupBtn.style.display = 'inline-block';
+    if (logoutBtn) logoutBtn.style.display = 'none';
+    if (usernameSpan) usernameSpan.textContent = '';
+  }
 
-  if (callback) callback(); // ✅ 로딩 완료 후 콜백 실행
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      auth.logout();
+      location.href = '/frontend/pages/login.html';
+    });
+  }
+});
+
+// 공통 HTML 포함 함수
+async function includeHTML() {
+  const header = document.querySelector('[data-include="header"]');
+  const footer = document.querySelector('[data-include="footer"]');
+
+  if (header) {
+    const res = await fetch('/frontend/partials/header.html');
+    header.innerHTML = await res.text();
+  }
+
+  if (footer) {
+    const res = await fetch('/frontend/partials/footer.html');
+    footer.innerHTML = await res.text();
+  }
 }

@@ -1,25 +1,65 @@
-import { apiPut, getTokenFromCookie } from "../assets/api.js";
+import { api } from './api.js';
+import { auth } from './auth.js';
 
-// 폼 제출 이벤트 처리
-document.getElementById("editForm").addEventListener("submit", async function (e) {
-  e.preventDefault();
+document.addEventListener('DOMContentLoaded', async () => {
+  const form = document.getElementById('edit-myshop-form');
+  const logoutBtn = document.getElementById('logout-btn');
+  const usernameSpan = document.getElementById('username');
 
-  const id = document.getElementById("productId").value;
-  const title = document.getElementById("title").value;
-  const description = document.getElementById("description").value;
-  const imageUrl = document.getElementById("imageUrl").value;
-  const price = parseInt(document.getElementById("price").value, 10);
+  const user = auth.getUser();
+  if (!user || user.role !== 'influencer') {
+    alert('고급 인플루언서만 접근 가능합니다.');
+    window.location.href = '/frontend/pages/login.html';
+    return;
+  }
 
-  const token = getTokenFromCookie();
+  if (usernameSpan) {
+    usernameSpan.textContent = user.name || user.email || '인플루언서';
+  }
 
-  const res = await apiPut(`/api/influencer-products/${id}`, {
-    title, description, imageUrl, price
-  }, token);
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      auth.logout();
+    });
+  }
 
-  if (res && res.updated) {
-    alert("수정이 완료되었습니다!");
-    location.reload();
-  } else {
-    alert("수정 실패: " + (res?.error || "서버 오류"));
+  const urlParams = new URLSearchParams(window.location.search);
+  const influencerProductId = urlParams.get('id');
+
+  if (!influencerProductId) {
+    alert('잘못된 접근입니다.');
+    return;
+  }
+
+  try {
+    const product = await api.get(`/api/influencer-products/${influencerProductId}`);
+
+    document.getElementById('title').value = product.title || '';
+    document.getElementById('description').value = product.description || '';
+    document.getElementById('imageUrl').value = product.imageUrl || '';
+    document.getElementById('price').value = product.price || '';
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const updatedData = {
+        title: document.getElementById('title').value.trim(),
+        description: document.getElementById('description').value.trim(),
+        imageUrl: document.getElementById('imageUrl').value.trim(),
+        price: parseFloat(document.getElementById('price').value)
+      };
+
+      try {
+        await api.post(`/api/influencer-products/update/${influencerProductId}`, updatedData);
+        alert('상품 정보가 수정되었습니다.');
+        window.location.href = '/frontend/pages/myshop-view.html';
+      } catch (err) {
+        console.error('수정 실패:', err);
+        alert('수정에 실패했습니다: ' + err.message);
+      }
+    });
+  } catch (err) {
+    console.error('상품 불러오기 실패:', err);
+    alert('상품 정보를 불러오는 데 실패했습니다.');
   }
 });

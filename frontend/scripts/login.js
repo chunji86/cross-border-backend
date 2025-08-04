@@ -1,35 +1,31 @@
 // frontend/scripts/login.js
+
 import { api } from './api.js';
+import { auth } from './auth.js';
 
-document.addEventListener("DOMContentLoaded", () => {
-  const form = document.getElementById("loginForm");
-  if (!form) {
-    console.error("⚠️ loginForm 요소를 찾을 수 없습니다.");
-    return;
-  }
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('login-form');
 
-  form.addEventListener("submit", async (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const emailOrPhone = form.emailOrPhone.value;
+    const emailOrPhone = form.emailOrPhone.value.trim();
     const password = form.password.value;
 
+    if (!emailOrPhone || !password) {
+      alert('아이디 또는 비밀번호를 입력해주세요.');
+      return;
+    }
+
     try {
-      const response = await api.post("/api/auth/login", { emailOrPhone, password });
+      const res = await api.post('/api/auth/login', { emailOrPhone, password });
+      auth.saveToken(res.token);
+      auth.saveUser(res.user);
 
-      if (response.token) {
-        localStorage.setItem("token", response.token);
-        localStorage.setItem("user", JSON.stringify(response.user));
-        localStorage.setItem("loginTimestamp", Date.now());
-
-        alert("로그인 성공!");
-        window.location.href = "/frontend/pages/shop.html";
-      } else {
-        alert("로그인 실패: " + (response.error || "서버 오류"));
-      }
-    } catch (error) {
-      console.error("Login error:", error);
-      alert("로그인 요청 중 오류가 발생했습니다.");
+      // ✅ 로그인 후 공통 페이지로 이동 (고객용 shop.html)
+      window.location.href = '/frontend/pages/shop.html';
+    } catch (err) {
+      alert('로그인 실패: ' + err.message);
     }
   });
 });
