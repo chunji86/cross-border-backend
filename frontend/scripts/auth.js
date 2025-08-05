@@ -1,35 +1,24 @@
-// frontend/scripts/auth.js
-
 export const auth = {
-  saveToken(token, user) {
-    localStorage.setItem('token', token);
+  saveUser(user) {
     localStorage.setItem('user', JSON.stringify(user));
-    localStorage.setItem('loginTimestamp', Date.now()); // 자동 로그아웃 대비
+    localStorage.setItem('loginTimestamp', Date.now().toString());
   },
-
-  getToken() {
-    return localStorage.getItem('token');
-  },
-
   getUser() {
     const user = localStorage.getItem('user');
     return user ? JSON.parse(user) : null;
   },
-
   logout() {
-    localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('loginTimestamp');
   },
-
-  isLoggedIn() {
-    return !!localStorage.getItem('token');
-  },
-
   isTokenExpired() {
     const timestamp = localStorage.getItem('loginTimestamp');
     if (!timestamp) return true;
-    const maxAge = 2 * 60 * 60 * 1000; // 2시간
-    return Date.now() - parseInt(timestamp) > maxAge;
-  }
+    const expireTime = 2 * 60 * 60 * 1000; // 2시간
+    return Date.now() - parseInt(timestamp) > expireTime;
+  },
+  getToken() {
+    const user = this.getUser();
+    return user ? user.token : null;
+  },
 };

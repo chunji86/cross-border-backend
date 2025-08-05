@@ -1,4 +1,3 @@
-// frontend/scripts/include.js
 import { auth } from './auth.js';
 
 export async function loadPartials() {
@@ -26,10 +25,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const user = auth.getUser();
 
-  // ✅ 로그인된 상태에서만 토큰 유효성 검사
-  if (user && auth.isTokenExpired()) {
+  if (auth.isTokenExpired()) {
     auth.logout();
-    // ❌ location.reload(); // 새로고침 제거
+    location.reload();
+    return;
   }
 
   if (user) {
