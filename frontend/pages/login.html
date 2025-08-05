@@ -69,20 +69,19 @@
 </head>
 
 <body>
-  <!-- ✅ 공통 Header -->
-  <script type="module" src="/scripts/include.js"></script>
-<script type="module" src="/scripts/login.js"></script>
+  <!-- ✅ 동적 포함될 Header -->
+  <div data-include="header" id="header"></div>
 
   <div class="login-container">
     <h2>로그인</h2>
-    <form id="loginForm">
+    <form id="login-form">
       <div class="form-group">
         <label for="emailOrPhone">이메일 또는 전화번호</label>
-        <input type="text" name="emailOrPhone" required placeholder="example@example.com 또는 010-1234-5678" />
+        <input type="text" id="emailOrPhone" name="emailOrPhone" required />
       </div>
       <div class="form-group">
         <label for="password">비밀번호</label>
-        <input type="password" name="password" required placeholder="비밀번호 입력" />
+        <input type="password" id="password" name="password" required />
       </div>
       <button type="submit">로그인</button>
     </form>
@@ -93,11 +92,14 @@
     </div>
   </div>
 
-  <!-- ✅ 공통 Footer -->
-  <div id="footer"></div>
+  <!-- ✅ 동적 포함될 Footer -->
+  <div data-include="footer" id="footer"></div>
 
-  <!-- ✅ script는 마지막에 -->
-  <script type="module" src="../scripts/login.js"></script>
-  <script src="/scripts/include.js"></script>
+  <!-- ✅ JS는 마지막에, 모듈 방식 -->
+  <script type="module">
+    import { loadPartials } from '/scripts/include.js';
+    await loadPartials();
+    import '/scripts/login.js';
+  </script>
 </body>
 </html>
