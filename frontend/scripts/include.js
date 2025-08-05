@@ -1,3 +1,4 @@
+// frontend/scripts/include.js
 import { auth } from './auth.js';
 
 export async function loadPartials() {
@@ -13,11 +14,11 @@ export async function loadPartials() {
     const res = await fetch('/frontend/partials/footer.html');
     footer.innerHTML = await res.text();
   }
-
-  updateUserMenuState();
 }
 
-function updateUserMenuState() {
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadPartials();
+
   const loginBtn = document.getElementById('login-btn');
   const signupBtn = document.getElementById('signup-btn');
   const logoutBtn = document.getElementById('logout-btn');
@@ -49,4 +50,4 @@ function updateUserMenuState() {
       location.href = '/frontend/pages/login.html';
     });
   }
-}
+});
