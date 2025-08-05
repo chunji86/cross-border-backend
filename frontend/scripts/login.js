@@ -20,12 +20,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     try {
-      // ✅ API 경로 수정됨
+      // ✅ 정확한 API 경로로 수정
       const res = await api.post('/api/auth/login', { emailOrPhone, password });
 
       if (res.token) {
-        auth.saveToken(res.token);
-        auth.saveUser(res.user);
+        auth.saveUser({ ...res.user, token: res.token });  // ✅ 토큰 포함 저장
 
         showMessage('로그인 성공!', 'success');
         setTimeout(() => {
@@ -35,8 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showMessage('로그인 실패: 토큰이 없습니다.', 'error');
       }
     } catch (err) {
-      const error = err?.response?.data?.error || '로그인 중 오류가 발생했습니다.';
-      showMessage(`로그인 실패: ${error}`, 'error');
+      showMessage(`로그인 실패: ${err.message}`, 'error');
     }
   });
 

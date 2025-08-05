@@ -1,3 +1,4 @@
+// frontend/scripts/auth.js
 export const auth = {
   saveUser(user) {
     localStorage.setItem('user', JSON.stringify(user));
@@ -10,8 +11,8 @@ export const auth = {
     try {
       return JSON.parse(raw);
     } catch (e) {
-      console.error('❌ localStorage user 값 파싱 실패:', e);
-      localStorage.removeItem('user'); // 잘못된 값 제거
+      console.error('❌ localStorage user 파싱 오류:', e);
+      localStorage.removeItem('user');
       return null;
     }
   },
@@ -28,5 +29,5 @@ export const auth = {
   getToken() {
     const user = this.getUser();
     return user ? user.token : null;
-  },
+  }
 };
