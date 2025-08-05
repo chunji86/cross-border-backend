@@ -2,35 +2,26 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>로그인 | 라쿤글로벌</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>로그인 - 라쿤글로벌</title>
   <link rel="stylesheet" href="/frontend/styles/style.css" />
   <script type="module" src="/frontend/scripts/include.js"></script>
 </head>
 <body>
   <div data-include="header"></div>
 
-  <main class="container">
-    <div class="form-container">
-      <h2>로그인</h2>
-      <form id="login-form">
-        <label for="emailOrPhone">이메일 또는 전화번호</label>
-        <input type="text" id="emailOrPhone" name="emailOrPhone" required />
-
-        <label for="password">비밀번호</label>
-        <input type="password" id="password" name="password" required />
-
-        <button type="submit">로그인</button>
-      </form>
-      <div class="links">
-        <a href="/frontend/pages/signup.html">회원가입</a> |
-        <a href="/frontend/pages/shop.html">쇼핑몰 바로가기</a>
-      </div>
-    </div>
+  <main class="login-container">
+    <h2>로그인</h2>
+    <form>
+      <input type="text" name="emailOrPhone" placeholder="이메일 또는 전화번호" required />
+      <input type="password" name="password" placeholder="비밀번호" required />
+      <button type="submit">로그인</button>
+    </form>
+    <div id="message" class="message-box"></div>
+    <p><a href="/frontend/pages/signup.html">회원가입</a></p>
   </main>
 
   <div data-include="footer"></div>
-
   <script type="module" src="/frontend/scripts/login.js"></script>
 </body>
 </html>

@@ -1,3 +1,4 @@
+// frontend/scripts/include.js
 import { auth } from './auth.js';
 
 export async function loadPartials() {
