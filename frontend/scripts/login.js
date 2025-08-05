@@ -20,7 +20,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     try {
-      const res = await api.post('/auth/login', { emailOrPhone, password });
+      // ✅ API 경로 수정됨
+      const res = await api.post('/api/auth/login', { emailOrPhone, password });
 
       if (res.token) {
         auth.saveToken(res.token);

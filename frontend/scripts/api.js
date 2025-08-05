@@ -1,5 +1,5 @@
 // frontend/scripts/api.js
-const BASE_URL = 'https://cross-border-backend-dc0m.onrender.com';
+const BASE_URL = 'https://cross-border-backend-dc0m.onrender.com/api';
 
 export const api = {
   async get(url) {
