@@ -6,49 +6,20 @@
   <title>라쿤글로벌 쇼핑몰</title>
   <link rel="stylesheet" href="../styles/common.css" />
   <link rel="stylesheet" href="../styles/shop.css" />
+  <script type="module" src="../scripts/include.js"></script>
+  <script type="module" src="../scripts/auth.js"></script>
 </head>
 <body>
-  <!-- ✅ 헤더/푸터 삽입 -->
-  <script type="module">
-  import { loadPartials } from '../scripts/include.js';
-  import { auth } from '../scripts/auth.js';
+  <div id="header"></div>
 
-  loadPartials(() => {
-    const loginBtn = document.getElementById('login-btn');
-    const signupBtn = document.getElementById('signup-btn');
-    const logoutBtn = document.getElementById('logout-btn');
-    const usernameSpan = document.getElementById('username');
-    const user = auth.getUser();
-
-    if (user) {
-      loginBtn.style.display = 'none';
-      signupBtn.style.display = 'none';
-      logoutBtn.style.display = 'inline-block';
-      usernameSpan.style.display = 'inline-block';
-      usernameSpan.textContent = `${user.name}님`;
-    }
-
-    if (loginBtn) loginBtn.onclick = () => location.href = 'login.html';
-    if (signupBtn) signupBtn.onclick = () => location.href = 'signup.html';
-    if (logoutBtn) logoutBtn.onclick = () => {
-      auth.logout();
-      location.reload();
-    };
-  });
-</script>
-
-
-  <!-- ✅ 슬라이드 배너 -->
   <section class="banner">
     <div class="slide fade"><img src="https://via.placeholder.com/728x90?text=배너1" /></div>
-    <div class="slide fade"><img src="https://via.placeholder.com/728x90?text=배너1" /></div>
-    <div class="slide fade"><img src="https://via.placeholder.com/728x90?text=배너1" /></div>
+    <div class="slide fade"><img src="https://via.placeholder.com/728x90?text=배너2" /></div>
+    <div class="slide fade"><img src="https://via.placeholder.com/728x90?text=배너3" /></div>
   </section>
 
-  <!-- ✅ 카테고리 -->
   <nav class="category-bar" id="category-bar"></nav>
 
-  <!-- ✅ 정렬 -->
   <div class="sort-bar">
     <button class="sort-btn" data-sort="popular">인기순</button>
     <button class="sort-btn" data-sort="new">최신순</button>
@@ -56,17 +27,15 @@
     <button class="sort-btn" data-sort="high">높은 가격</button>
   </div>
 
-  <!-- ✅ 상품 목록 -->
   <main id="product-list" class="product-list"></main>
 
-  <!-- ✅ 스크립트 -->
-  <script src="../scripts/api.js" type="module"></script>
-  <script src="../scripts/auth.js" type="module"></script>
-  <script src="../scripts/shop.js" type="module"></script>
+  <div id="footer"></div>
+
+  <script type="module" src="../scripts/shop.js"></script>
   <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
   <script>
     function googleTranslateElementInit() {
-      new google.translate.TranslateElement({pageLanguage: 'ko'}, 'google_translate_element');
+      new google.translate.TranslateElement({ pageLanguage: 'ko' }, 'google_translate_element');
     }
   </script>
 </body>
