@@ -26,10 +26,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const user = auth.getUser();
 
-  if (auth.isTokenExpired()) {
+  // ✅ 로그인된 상태에서만 토큰 유효성 검사
+  if (user && auth.isTokenExpired()) {
     auth.logout();
-    location.reload();
-    return;
+    // ❌ location.reload(); // 새로고침 제거
   }
 
   if (user) {
