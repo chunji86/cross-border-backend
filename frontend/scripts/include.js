@@ -1,53 +1,21 @@
-// frontend/scripts/include.js
-import { auth } from './auth.js';
-
 export async function loadPartials() {
-  const header = document.querySelector('[data-include="header"]');
-  const footer = document.querySelector('[data-include="footer"]');
+  try {
+    const header = await fetch('/partials/header.html');
+    const footer = await fetch('/partials/footer.html');
 
-  if (header) {
-    const res = await fetch('/frontend/partials/header.html');
-    header.innerHTML = await res.text();
-  }
+    if (!header.ok || !footer.ok) {
+      throw new Error('Header or footer fetch failed');
+    }
 
-  if (footer) {
-    const res = await fetch('/frontend/partials/footer.html');
-    footer.innerHTML = await res.text();
+    const headerHtml = await header.text();
+    const footerHtml = await footer.text();
+
+    const headerElement = document.getElementById('header');
+    const footerElement = document.getElementById('footer');
+
+    if (headerElement) headerElement.innerHTML = headerHtml;
+    if (footerElement) footerElement.innerHTML = footerHtml;
+  } catch (error) {
+    console.error('Error loading partials:', error);
   }
 }
-
-document.addEventListener('DOMContentLoaded', async () => {
-  await loadPartials();
-
-  const loginBtn = document.getElementById('login-btn');
-  const signupBtn = document.getElementById('signup-btn');
-  const logoutBtn = document.getElementById('logout-btn');
-  const usernameSpan = document.getElementById('username');
-
-  const user = auth.getUser();
-
-  if (auth.isTokenExpired()) {
-    auth.logout();
-    location.reload();
-    return;
-  }
-
-  if (user) {
-    if (loginBtn) loginBtn.style.display = 'none';
-    if (signupBtn) signupBtn.style.display = 'none';
-    if (logoutBtn) logoutBtn.style.display = 'inline-block';
-    if (usernameSpan) usernameSpan.textContent = `${user.name || user.email}`;
-  } else {
-    if (loginBtn) loginBtn.style.display = 'inline-block';
-    if (signupBtn) signupBtn.style.display = 'inline-block';
-    if (logoutBtn) logoutBtn.style.display = 'none';
-    if (usernameSpan) usernameSpan.textContent = '';
-  }
-
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', () => {
-      auth.logout();
-      location.href = '/frontend/pages/login.html';
-    });
-  }
-});
