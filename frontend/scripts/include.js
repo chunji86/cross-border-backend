@@ -1,12 +1,24 @@
 // frontend/scripts/include.js
-
 import { auth } from './auth.js';
 
-document.addEventListener('DOMContentLoaded', async () => {
-  // 공통 헤더/푸터 동적 삽입
-  await includeHTML();
+export async function loadPartials() {
+  const header = document.querySelector('[data-include="header"]');
+  const footer = document.querySelector('[data-include="footer"]');
 
-  // 로그인 상태에 따른 메뉴 표시 변경
+  if (header) {
+    const res = await fetch('/frontend/partials/header.html');
+    header.innerHTML = await res.text();
+  }
+
+  if (footer) {
+    const res = await fetch('/frontend/partials/footer.html');
+    footer.innerHTML = await res.text();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadPartials();
+
   const loginBtn = document.getElementById('login-btn');
   const signupBtn = document.getElementById('signup-btn');
   const logoutBtn = document.getElementById('logout-btn');
@@ -39,19 +51,3 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 });
-
-// 공통 HTML 포함 함수
-async function includeHTML() {
-  const header = document.querySelector('[data-include="header"]');
-  const footer = document.querySelector('[data-include="footer"]');
-
-  if (header) {
-    const res = await fetch('/frontend/partials/header.html');
-    header.innerHTML = await res.text();
-  }
-
-  if (footer) {
-    const res = await fetch('/frontend/partials/footer.html');
-    footer.innerHTML = await res.text();
-  }
-}

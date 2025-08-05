@@ -70,10 +70,8 @@
 
 <body>
   <!-- ✅ 공통 Header -->
-  <script type="module">
-  import { loadPartials } from '../scripts/include.js';
-  import { auth } from '../scripts/auth.js';
-</script>
+  <script type="module" src="/scripts/include.js"></script>
+<script type="module" src="/scripts/login.js"></script>
 
   <div class="login-container">
     <h2>로그인</h2>
@@ -99,7 +97,7 @@
   <div id="footer"></div>
 
   <!-- ✅ script는 마지막에 -->
-  <script type="module" src="/scripts/login.js"></script>
+  <script type="module" src="../scripts/login.js"></script>
   <script src="/scripts/include.js"></script>
 </body>
 </html>
