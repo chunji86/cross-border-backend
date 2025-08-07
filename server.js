@@ -36,6 +36,8 @@ const adminProductsRoutes = require('./routes/adminProducts');
 const adminWithdrawalsRoutes = require('./routes/adminWithdrawals');
 const commissionsRoutes = require('./routes/commissions');
 const purchaseRoutes = require('./routes/purchase');
+const cafe24Routes = require('./routes/cafe24');
+const cafe24CallbackRouter = require('./routes/cafe24/callback');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/rewards', rewardRoutes);
@@ -50,6 +52,8 @@ app.use('/api/admin/products', adminProductsRoutes);
 app.use('/api/admin/withdrawals', adminWithdrawalsRoutes);
 app.use('/api/commissions', commissionsRoutes);
 app.use('/api/purchase', purchaseRoutes);
+app.use('/api/cafe24', cafe24Routes);
+app.use('/api/cafe24/callback', cafe24CallbackRouter);
 
 
 // ✅ 서버 시작
