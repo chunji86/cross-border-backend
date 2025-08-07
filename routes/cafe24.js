@@ -1,17 +1,17 @@
-// routes/cafe24.js
 const express = require('express');
 const axios = require('axios');
 const router = express.Router();
 
-// .env 파일에 저장된 앱 정보 사용
+const { saveToken: saveCafe24Token } = require('../utils/cafe24Token');
+const { saveToken: saveLocalToken } = require('../utils/tokenManager');
+
 const {
   CAFE24_CLIENT_ID,
   CAFE24_CLIENT_SECRET,
   CAFE24_REDIRECT_URI,
-  CAFE24_MALL_ID, // 예: racoonglobal.cafe24api.com 에서 'racoonglobal'
+  CAFE24_MALL_ID,
 } = process.env;
 
-// ✅ 카페24 OAuth 콜백 처리
 router.get('/callback', async (req, res) => {
   const { code } = req.query;
 
@@ -20,7 +20,6 @@ router.get('/callback', async (req, res) => {
   }
 
   try {
-    // ✅ Access Token 요청
     const tokenRes = await axios.post(`https://${CAFE24_MALL_ID}.cafe24api.com/api/v2/oauth/token`, null, {
       params: {
         grant_type: 'authorization_code',
@@ -36,8 +35,12 @@ router.get('/callback', async (req, res) => {
 
     const { access_token, refresh_token, expires_at } = tokenRes.data;
 
-    // ✅ 저장 or 테스트 응답
-    console.log('Access Token:', access_token);
+    console.log('✅ Access Token:', access_token);
+
+    // ✅ 토큰 저장 (카페24 + 로컬 모두)
+    saveCafe24Token({ access_token, refresh_token, expires_at });
+    saveLocalToken({ access_token, refresh_token, expires_at });
+
     res.json({
       message: '✅ 카페24 인증 성공!',
       access_token,

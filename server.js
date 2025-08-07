@@ -1,4 +1,3 @@
-// ✅ server.js (최신 통합본)
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -6,13 +5,13 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 const app = express();
 
-// ✅ 미들웨어
+// ✅ 미들웨어 설정
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// ✅ 정적 파일 경로 설정
+// ✅ 정적 파일 경로
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/styles', express.static(path.join(__dirname, 'frontend/styles')));
 app.use('/scripts', express.static(path.join(__dirname, 'frontend/scripts')));
@@ -21,8 +20,11 @@ app.use('/assets', express.static(path.join(__dirname, 'frontend/assets')));
 app.use('/frontend', express.static(path.join(__dirname, 'frontend')));
 app.use('/partials', express.static(path.join(__dirname, 'frontend/partials')));
 
+// ✅ API 라우터 등록 (💡순서 중요)
+const cafe24ShopRouter = require('./routes/cafe24/shop');          // 💡 먼저 연결
+const cafe24Routes = require('./routes/cafe24');
+const cafe24SyncRouter = require('./routes/cafe24Sync');
 
-// ✅ 라우터 연결
 const authRoutes = require('./routes/auth');
 const rewardRoutes = require('./routes/rewards');
 const withdrawalRoutes = require('./routes/withdrawals');
@@ -36,8 +38,12 @@ const adminProductsRoutes = require('./routes/adminProducts');
 const adminWithdrawalsRoutes = require('./routes/adminWithdrawals');
 const commissionsRoutes = require('./routes/commissions');
 const purchaseRoutes = require('./routes/purchase');
-const cafe24Routes = require('./routes/cafe24');
-const cafe24CallbackRouter = require('./routes/cafe24/callback');
+
+// ✅ 실제 API 라우터 사용
+app.use('/api/cafe24/shop', cafe24ShopRouter);  // 💡 먼저 선언
+app.use('/api/cafe24', cafe24Routes);
+app.use('/api/cafe24', cafe24SyncRouter);
+app.use('/api/cafe24-sync', cafe24SyncRouter);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/rewards', rewardRoutes);
@@ -52,11 +58,8 @@ app.use('/api/admin/products', adminProductsRoutes);
 app.use('/api/admin/withdrawals', adminWithdrawalsRoutes);
 app.use('/api/commissions', commissionsRoutes);
 app.use('/api/purchase', purchaseRoutes);
-app.use('/api/cafe24', cafe24Routes);
-app.use('/api/cafe24/callback', cafe24CallbackRouter);
 
-
-// ✅ 서버 시작
+// ✅ 서버 실행
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Server is running on http://localhost:${PORT}`);

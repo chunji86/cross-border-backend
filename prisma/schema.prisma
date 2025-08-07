@@ -46,6 +46,7 @@ model Product {
   shippingCountries  String[]
   vendor             User                @relation("VendorProducts", fields: [vendorId], references: [id])
   vendorId           Int
+  externalId  String? @unique  // 👈 외부 연동용 ID
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   influencerProducts InfluencerProduct[]
