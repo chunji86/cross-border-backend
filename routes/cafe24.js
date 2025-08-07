@@ -1,9 +1,8 @@
 const express = require('express');
 const axios = require('axios');
 const router = express.Router();
-
-const { saveToken: saveCafe24Token } = require('../utils/cafe24Token');
-const { saveToken: saveLocalToken } = require('../utils/tokenManager');
+const { saveToken } = require('../utils/cafe24Token');
+require('dotenv').config();
 
 const {
   CAFE24_CLIENT_ID,
@@ -12,6 +11,7 @@ const {
   CAFE24_MALL_ID,
 } = process.env;
 
+// ✅ 카페24 인증 콜백
 router.get('/callback', async (req, res) => {
   const { code } = req.query;
 
@@ -19,36 +19,30 @@ router.get('/callback', async (req, res) => {
     return res.status(400).json({ error: 'Missing authorization code' });
   }
 
+  const basicAuth = Buffer.from(`${CAFE24_CLIENT_ID}:${CAFE24_CLIENT_SECRET}`).toString('base64');
+
   try {
-    const tokenRes = await axios.post(`https://${CAFE24_MALL_ID}.cafe24api.com/api/v2/oauth/token`, null, {
-      params: {
+    const response = await axios.post(
+      `https://${CAFE24_MALL_ID}.cafe24api.com/api/v2/oauth/token`,
+      {
         grant_type: 'authorization_code',
         code,
-        client_id: CAFE24_CLIENT_ID,
-        client_secret: CAFE24_CLIENT_SECRET,
         redirect_uri: CAFE24_REDIRECT_URI,
       },
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-    });
+      {
+        headers: {
+          Authorization: `Basic ${basicAuth}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
 
-    const { access_token, refresh_token, expires_at } = tokenRes.data;
+    const tokenData = response.data;
+    saveToken(tokenData);
 
-    console.log('✅ Access Token:', access_token);
-
-    // ✅ 토큰 저장 (카페24 + 로컬 모두)
-    saveCafe24Token({ access_token, refresh_token, expires_at });
-    saveLocalToken({ access_token, refresh_token, expires_at });
-
-    res.json({
-      message: '✅ 카페24 인증 성공!',
-      access_token,
-      refresh_token,
-      expires_at,
-    });
-  } catch (error) {
-    console.error('❌ 카페24 토큰 요청 실패:', error.response?.data || error.message);
+    res.send('✅ 토큰 저장 완료! 이제 API를 사용할 수 있습니다.');
+  } catch (err) {
+    console.error('❌ 카페24 토큰 요청 실패:', err.response?.data || err.message);
     res.status(500).json({ error: '카페24 토큰 요청 실패' });
   }
 });
