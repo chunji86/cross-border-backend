@@ -1,49 +1,55 @@
 const express = require('express');
-const axios = require('axios');
 const router = express.Router();
-const { saveToken } = require('../utils/cafe24Token');
-require('dotenv').config();
+const { getAccessToken } = require('../utils/cafe24Token');
+const { getToken } = require('../utils/tokenManager');
+const axios = require('axios');
 
-const {
-  CAFE24_CLIENT_ID,
-  CAFE24_CLIENT_SECRET,
-  CAFE24_REDIRECT_URI,
-  CAFE24_MALL_ID,
-} = process.env;
-
-// ✅ 카페24 인증 콜백
+// ✅ 1. 앱 설치 콜백
 router.get('/callback', async (req, res) => {
-  const { code } = req.query;
+  const code = req.query.code;
+  const mall_id = req.query.state;  // state를 mall_id로 사용
 
-  if (!code) {
-    return res.status(400).json({ error: 'Missing authorization code' });
+  if (!code || !mall_id) {
+    return res.status(400).send('Missing code or mall_id');
   }
 
-  const basicAuth = Buffer.from(`${CAFE24_CLIENT_ID}:${CAFE24_CLIENT_SECRET}`).toString('base64');
+  try {
+    const tokenData = await getAccessToken(mall_id, code);
+    res.send(`<h2>✅ ${mall_id} 앱 설치 완료</h2><pre>${JSON.stringify(tokenData, null, 2)}</pre>`);
+  } catch (err) {
+    res.status(500).send('카페24 토큰 요청 실패');
+  }
+});
+
+// ✅ 2. 저장된 토큰 보기
+router.get('/token/:mall_id', (req, res) => {
+  const mall_id = req.params.mall_id;
+  const token = getToken(mall_id);
+  if (!token) return res.status(404).json({ error: '토큰 없음' });
+
+  res.json(token);
+});
+
+// ✅ 3. 상품 목록 API 테스트 (예시)
+router.get('/shop/test', async (req, res) => {
+  const mall_id = req.query.mall_id || 'hanfen';
+  const token = getToken(mall_id);
+  if (!token) return res.status(404).json({ error: '토큰 없음' });
 
   try {
-    const response = await axios.post(
-      `https://${CAFE24_MALL_ID}.cafe24api.com/api/v2/oauth/token`,
-      {
-        grant_type: 'authorization_code',
-        code,
-        redirect_uri: CAFE24_REDIRECT_URI,
-      },
-      {
-        headers: {
-          Authorization: `Basic ${basicAuth}`,
-          'Content-Type': 'application/json',
-        },
+    const apiUrl = `https://${mall_id}.cafe24api.com/api/v2/admin/products`;
+
+    const response = await axios.get(apiUrl, {
+      headers: {
+        Authorization: `Bearer ${token.access_token}`,
+        'Content-Type': 'application/json'
       }
-    );
+    });
 
-    const tokenData = response.data;
-    saveToken(tokenData);
-
-    res.send('✅ 토큰 저장 완료! 이제 API를 사용할 수 있습니다.');
-  } catch (err) {
-    console.error('❌ 카페24 토큰 요청 실패:', err.response?.data || err.message);
-    res.status(500).json({ error: '카페24 토큰 요청 실패' });
+    res.json(response.data);
+  } catch (error) {
+    console.error('❌ 상품 목록 조회 실패:', error.response?.data || error.message);
+    res.status(500).json({ error: 'API 호출 실패' });
   }
 });
 
