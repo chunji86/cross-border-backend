@@ -33,6 +33,7 @@ const cafe24ShopRouter = require('./routes/cafe24/shop');          // 💡 먼�
 const cafe24Routes = require('./routes/cafe24');
 const cafe24SyncRouter = require('./routes/cafe24Sync');
 const testRoutes = require('./routes/test');
+const saveProductsRouter = require('./routes/cafe24/saveProducts');
 
 const authRoutes = require('./routes/auth');
 const rewardRoutes = require('./routes/rewards');
@@ -54,6 +55,7 @@ app.use('/api/cafe24', cafe24Routes);
 app.use('/api/cafe24', cafe24SyncRouter);
 app.use('/api/cafe24-sync', cafe24SyncRouter);
 app.use('/api/test', testRoutes);
+app.use('/api/cafe24/save-products', saveProductsRouter);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/rewards', rewardRoutes);

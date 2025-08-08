@@ -1,3 +1,5 @@
+// prisma/schema.prisma
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,122 +10,86 @@ datasource db {
 }
 
 model User {
-  id                 Int                 @id @default(autoincrement())
-  email              String?             @unique
-  phone              String?             @unique
-  password           String
-  role               String
-  isAdvanced         Boolean             @default(false)
+  id        Int      @id @default(autoincrement())
+  email     String?  @unique
+  phone     String?  @unique
+  password  String
+  role      String   // 'admin', 'vendor', 'influencer', 'customer'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  // ✅ 수정된 SNS 링크 필드
-  socialLinks        Json?
-
-  // ✅ 파일 업로드 관련 필드 추가
-  businessLicense    String?
-  bankBook           String?
-  commerceCertificate String?
-  idCard             String?
-
-  // 기존 관계 및 메타 필드
-  products           Product[]           @relation("VendorProducts")
-  promotionLinks     PromotionLink[]
   influencerProducts InfluencerProduct[]
-  commissions        Commission[]
   withdrawals        Withdrawal[]
+  promotionLinks     PromotionLink[]
   orders             Order[]
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
 }
 
-
 model Product {
-  id                 Int                 @id @default(autoincrement())
-  name               String
-  description        String
-  price              Int
-  category           String?
-  rewardRate         Float               @default(0)
-  shippingCountries  String[]
-  vendor             User                @relation("VendorProducts", fields: [vendorId], references: [id])
-  vendorId           Int
-  externalId  String? @unique  // 👈 외부 연동용 ID
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  id        Int      @id @default(autoincrement())
+  cafe24Id  Int      @unique         // Cafe24 product_no
+  mallId    String                   // 어떤 쇼핑몰의 상품인지
+  name      String
+  price     Int
+  imageUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   influencerProducts InfluencerProduct[]
   orderItems         OrderItem[]
-  promotionLinks     PromotionLink[]
+  promotionLinks     PromotionLink[]  
+}
+
+model InfluencerProduct {
+  id          Int      @id @default(autoincrement())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      Int
+  product     Product  @relation(fields: [productId], references: [id])
+  productId   Int
+  title       String
+  description String
+  imageUrl    String
+  price       Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model PromotionLink {
   id        Int      @id @default(autoincrement())
-  user      User     @relation(fields: [userId], references: [id])
   userId    Int
-  product   Product  @relation(fields: [productId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
   productId Int
+  product   Product  @relation(fields: [productId], references: [id])
   code      String   @unique
   createdAt DateTime @default(now())
-  clicks    Click[]
-}
-
-model Click {
-  id              Int           @id @default(autoincrement())
-  promotionLink   PromotionLink @relation(fields: [promotionLinkId], references: [id])
-  promotionLinkId Int
-  ip              String
-  userAgent       String
-  createdAt       DateTime      @default(now())
-}
-
-model Order {
-  id          Int         @id @default(autoincrement())
-  user        User?       @relation(fields: [userId], references: [id])
-  userId      Int?
-  totalAmount Int
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  items       OrderItem[]
-}
-
-model OrderItem {
-  id         Int         @id @default(autoincrement())
-  order      Order       @relation(fields: [orderId], references: [id])
-  orderId    Int
-  product    Product     @relation(fields: [productId], references: [id])
-  productId  Int
-  quantity   Int
-  price      Int
-  commission Commission?
-}
-
-model Commission {
-  id          Int       @id @default(autoincrement())
-  user        User      @relation(fields: [userId], references: [id])
-  userId      Int
-  orderItem   OrderItem @relation(fields: [orderItemId], references: [id])
-  orderItemId Int       @unique
-  amount      Int
-  createdAt   DateTime  @default(now())
 }
 
 model Withdrawal {
-  id          Int       @id @default(autoincrement())
-  user        User      @relation(fields: [userId], references: [id])
-  userId      Int
-  amount      Int
-  status      String    @default("pending")
-  requestedAt DateTime  @default(now())
-  processedAt DateTime?
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  amount    Int
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-model InfluencerProduct {
-  id              Int      @id @default(autoincrement())
-  user            User     @relation(fields: [userId], references: [id])
-  userId          Int
-  originalProduct Product  @relation(fields: [productId], references: [id])
-  productId       Int
-  title           String
-  description     String
-  price           Int
-  imageUrl        String
-  createdAt       DateTime @default(now())
+model Order {
+  id           Int        @id @default(autoincrement())
+  userId       Int
+  user         User       @relation(fields: [userId], references: [id])
+  totalAmount  Int
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  orderItems   OrderItem[]
+}
+
+model OrderItem {
+  id        Int      @id @default(autoincrement())
+  orderId   Int
+  order     Order    @relation(fields: [orderId], references: [id])
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Int
 }
