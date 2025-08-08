@@ -3,7 +3,6 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const { getValidAccessToken } = require('../../utils/tokenManager'); // ✅ 정확한 함수명
 
 // ✅ 상품 목록 조회 API
 // GET /api/cafe24/shop/products?mall_id=hanfen
