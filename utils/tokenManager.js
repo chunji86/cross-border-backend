@@ -3,11 +3,26 @@ const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 
+// ✅ 토큰 파일 경로 생성
 function getTokenFilePath(mall_id) {
   return path.join(__dirname, '..', 'tokens', `${mall_id}_token.json`);
 }
 
-// ✅ 토큰 유효성 검사 + 자동 갱신
+// ✅ access_token 저장 함수
+function saveAccessToken(mall_id, tokenData) {
+  const tokenPath = getTokenFilePath(mall_id);
+
+  const formattedToken = {
+    ...tokenData,
+    expires_at: Math.floor(new Date(tokenData.expires_at).getTime() / 1000),
+    refresh_token_expires_at: Math.floor(new Date(tokenData.refresh_token_expires_at).getTime() / 1000),
+    issued_at: tokenData.issued_at,
+  };
+
+  fs.writeFileSync(tokenPath, JSON.stringify(formattedToken, null, 2));
+}
+
+// ✅ access_token 유효성 검사 및 자동 갱신
 async function getValidAccessToken(mall_id) {
   const tokenPath = getTokenFilePath(mall_id);
 
@@ -22,7 +37,7 @@ async function getValidAccessToken(mall_id) {
     return tokenData.access_token;
   }
 
-  // 만료된 경우, refresh
+  // 토큰 만료 → refresh 요청
   try {
     const refreshResponse = await axios.post(
       `https://${mall_id}.cafe24api.com/api/v2/oauth/token`,
@@ -59,4 +74,5 @@ async function getValidAccessToken(mall_id) {
 
 module.exports = {
   getValidAccessToken,
+  saveAccessToken,
 };
