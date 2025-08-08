@@ -2,7 +2,7 @@ const express = require('express');
 const axios = require('axios');
 const router = express.Router();
 
-const { getToken } = require('../utils/cafe24Token');
+const { getToken } = require('../utils/tokenManager');
 
 // ✅ 카페24 상품 전체 목록 동기화 (백오피스용)
 router.get('/products', async (req, res) => {
