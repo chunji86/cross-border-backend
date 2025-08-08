@@ -1,52 +1,58 @@
 const express = require('express');
-const axios = require('axios');
 const router = express.Router();
+const axios = require('axios');
 const qs = require('qs');
-const fs = require('fs');
 const path = require('path');
+const { saveAccessToken } = require('../utils/tokenManager');
 
-const tokenDir = path.join(__dirname, '../tokens');
-if (!fs.existsSync(tokenDir)) fs.mkdirSync(tokenDir);
-
-// 🔽 콜백 라우터
 router.get('/callback', async (req, res) => {
-  const { code, state: mall_id } = req.query;
-  console.log('📥 [callback] code:', code);
-  console.log('📥 [callback] mall_id:', mall_id);
-
-  if (!code || !mall_id) {
-    return res.status(400).json({ error: 'code 또는 mall_id 누락됨' });
-  }
-
   try {
-    const tokenUrl = `https://${mall_id}.cafe24api.com/api/v2/oauth/token`;
-    const headers = {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      Authorization: 'Basic ' + Buffer.from(`${process.env.CAFE24_CLIENT_ID}:${process.env.CAFE24_CLIENT_SECRET}`).toString('base64'),
-    };
+    console.log('✅ [1] /callback 진입:', req.query);
 
-    const data = qs.stringify({
+    const mall_id = req.query.mall_id || process.env.CAFE24_MALL_ID;
+    const code = req.query.code;
+
+    if (!code) {
+      console.log('❌ [2] code 없음 - 토큰 요청 불가');
+      return res.status(400).send('Missing authorization code.');
+    }
+
+    const tokenEndpoint = `https://${mall_id}.cafe24api.com/api/v2/oauth/token`;
+    const client_id = process.env.CAFE24_CLIENT_ID;
+    const client_secret = process.env.CAFE24_CLIENT_SECRET;
+    const redirect_uri = process.env.CAFE24_REDIRECT_URI;
+
+    const tokenPayload = qs.stringify({
       grant_type: 'authorization_code',
       code,
-      redirect_uri: process.env.CAFE24_REDIRECT_URI,
+      client_id,
+      client_secret,
+      redirect_uri,
     });
 
-    console.log('🚀 [Token 요청] POST', tokenUrl);
-    console.log('📦 [Token 요청] Headers:', headers);
-    console.log('📦 [Token 요청] Body:', data);
+    console.log('🔄 [3] 토큰 요청 전송 중...');
+    const tokenResponse = await axios.post(tokenEndpoint, tokenPayload, {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    });
 
-    const tokenRes = await axios.post(tokenUrl, data, { headers });
-    console.log('✅ [Token 응답] 성공:', tokenRes.data);
+    console.log('✅ [4] 토큰 응답 수신:', tokenResponse.data);
 
-    // 🔽 토큰 저장
-    const tokenPath = path.join(tokenDir, `${mall_id}_token.json`);
-    fs.writeFileSync(tokenPath, JSON.stringify(tokenRes.data, null, 2));
-    console.log(`💾 [Token 저장 완료] ${tokenPath}`);
+    // 저장 시도
+    const tokenData = tokenResponse.data;
+    const saveResult = await saveAccessToken(mall_id, tokenData);
 
-    return res.send(`✅ ${mall_id} 토큰 저장 완료`);
+    if (saveResult) {
+      console.log(`✅ [5] 토큰 저장 성공: tokens/${mall_id}_token.json`);
+    } else {
+      console.log(`❌ [5] 토큰 저장 실패`);
+    }
+
+    res.send('🎉 라쿤글로벌 카페24 앱이 정상 작동 중입니다!');
   } catch (error) {
-    console.error('❌ [토큰 요청 실패]', error.response?.data || error.message);
-    return res.status(500).json({ error: '토큰 요청 실패', detail: error.response?.data || error.message });
+    console.error('❌ [ERROR] Callback 처리 중 오류:', error.response?.data || error.message);
+    res.status(500).send('앱 설치 처리 중 오류가 발생했습니다.');
   }
 });
 
