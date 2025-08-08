@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const { getValidAccessToken } = require('../../utils/tokenManager');
+const { getValidAccessToken } = require('../utils/tokenManager');
 
 // ✅ 상품 목록 조회 (자동 토큰 갱신 포함)
 router.get('/products', async (req, res) => {
