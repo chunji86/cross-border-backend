@@ -1,55 +1,52 @@
 const express = require('express');
-const router = express.Router();
-const { getAccessToken } = require('../utils/cafe24Token');
-const { getToken } = require('../utils/tokenManager');
 const axios = require('axios');
+const router = express.Router();
+const qs = require('qs');
+const fs = require('fs');
+const path = require('path');
 
-// ✅ 1. 앱 설치 콜백
+const tokenDir = path.join(__dirname, '../tokens');
+if (!fs.existsSync(tokenDir)) fs.mkdirSync(tokenDir);
+
+// 🔽 콜백 라우터
 router.get('/callback', async (req, res) => {
-  const code = req.query.code;
-  const mall_id = req.query.state;  // state를 mall_id로 사용
+  const { code, state: mall_id } = req.query;
+  console.log('📥 [callback] code:', code);
+  console.log('📥 [callback] mall_id:', mall_id);
 
   if (!code || !mall_id) {
-    return res.status(400).send('Missing code or mall_id');
+    return res.status(400).json({ error: 'code 또는 mall_id 누락됨' });
   }
 
   try {
-    const tokenData = await getAccessToken(mall_id, code);
-    res.send(`<h2>✅ ${mall_id} 앱 설치 완료</h2><pre>${JSON.stringify(tokenData, null, 2)}</pre>`);
-  } catch (err) {
-    res.status(500).send('카페24 토큰 요청 실패');
-  }
-});
+    const tokenUrl = `https://${mall_id}.cafe24api.com/api/v2/oauth/token`;
+    const headers = {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      Authorization: 'Basic ' + Buffer.from(`${process.env.CAFE24_CLIENT_ID}:${process.env.CAFE24_CLIENT_SECRET}`).toString('base64'),
+    };
 
-// ✅ 2. 저장된 토큰 보기
-router.get('/token/:mall_id', (req, res) => {
-  const mall_id = req.params.mall_id;
-  const token = getToken(mall_id);
-  if (!token) return res.status(404).json({ error: '토큰 없음' });
-
-  res.json(token);
-});
-
-// ✅ 3. 상품 목록 API 테스트 (예시)
-router.get('/shop/test', async (req, res) => {
-  const mall_id = req.query.mall_id || 'hanfen';
-  const token = getToken(mall_id);
-  if (!token) return res.status(404).json({ error: '토큰 없음' });
-
-  try {
-    const apiUrl = `https://${mall_id}.cafe24api.com/api/v2/admin/products`;
-
-    const response = await axios.get(apiUrl, {
-      headers: {
-        Authorization: `Bearer ${token.access_token}`,
-        'Content-Type': 'application/json'
-      }
+    const data = qs.stringify({
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: process.env.CAFE24_REDIRECT_URI,
     });
 
-    res.json(response.data);
+    console.log('🚀 [Token 요청] POST', tokenUrl);
+    console.log('📦 [Token 요청] Headers:', headers);
+    console.log('📦 [Token 요청] Body:', data);
+
+    const tokenRes = await axios.post(tokenUrl, data, { headers });
+    console.log('✅ [Token 응답] 성공:', tokenRes.data);
+
+    // 🔽 토큰 저장
+    const tokenPath = path.join(tokenDir, `${mall_id}_token.json`);
+    fs.writeFileSync(tokenPath, JSON.stringify(tokenRes.data, null, 2));
+    console.log(`💾 [Token 저장 완료] ${tokenPath}`);
+
+    return res.send(`✅ ${mall_id} 토큰 저장 완료`);
   } catch (error) {
-    console.error('❌ 상품 목록 조회 실패:', error.response?.data || error.message);
-    res.status(500).json({ error: 'API 호출 실패' });
+    console.error('❌ [토큰 요청 실패]', error.response?.data || error.message);
+    return res.status(500).json({ error: '토큰 요청 실패', detail: error.response?.data || error.message });
   }
 });
 
