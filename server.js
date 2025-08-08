@@ -32,6 +32,7 @@ app.use('/partials', express.static(path.join(__dirname, 'frontend/partials')));
 const cafe24ShopRouter = require('./routes/cafe24/shop');          // 💡 먼저 연결
 const cafe24Routes = require('./routes/cafe24');
 const cafe24SyncRouter = require('./routes/cafe24Sync');
+const testRoutes = require('./routes/test');
 
 const authRoutes = require('./routes/auth');
 const rewardRoutes = require('./routes/rewards');
@@ -52,6 +53,7 @@ app.use('/api/cafe24/shop', cafe24ShopRouter);  // 💡 먼저 선언
 app.use('/api/cafe24', cafe24Routes);
 app.use('/api/cafe24', cafe24SyncRouter);
 app.use('/api/cafe24-sync', cafe24SyncRouter);
+app.use('/api/test', testRoutes);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/rewards', rewardRoutes);
