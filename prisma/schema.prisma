@@ -14,7 +14,7 @@ model User {
   email     String?  @unique
   phone     String?  @unique
   password  String
-  role      String   // 'admin', 'vendor', 'influencer', 'customer'
+  role      String // 'admin', 'vendor', 'influencer', 'customer'
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -26,8 +26,8 @@ model User {
 
 model Product {
   id        Int      @id @default(autoincrement())
-  cafe24Id  Int      @unique         // Cafe24 product_no
-  mallId    String                   // 어떤 쇼핑몰의 상품인지
+  cafe24Id  Int      @unique // Cafe24 product_no
+  mallId    String // 어떤 쇼핑몰의 상품인지
   name      String
   price     Int
   imageUrl  String?
@@ -36,7 +36,7 @@ model Product {
 
   influencerProducts InfluencerProduct[]
   orderItems         OrderItem[]
-  promotionLinks     PromotionLink[]  
+  promotionLinks     PromotionLink[]
 }
 
 model InfluencerProduct {
@@ -74,22 +74,22 @@ model Withdrawal {
 }
 
 model Order {
-  id           Int        @id @default(autoincrement())
-  userId       Int
-  user         User       @relation(fields: [userId], references: [id])
-  totalAmount  Int
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  totalAmount Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  orderItems   OrderItem[]
+  orderItems OrderItem[]
 }
 
 model OrderItem {
-  id        Int      @id @default(autoincrement())
+  id        Int     @id @default(autoincrement())
   orderId   Int
-  order     Order    @relation(fields: [orderId], references: [id])
+  order     Order   @relation(fields: [orderId], references: [id])
   productId Int
-  product   Product  @relation(fields: [productId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
   quantity  Int
   price     Int
 }
