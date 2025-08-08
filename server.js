@@ -4,6 +4,16 @@ const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const path = require('path');
 const app = express();
+const express = require('express');
+const app = express();
+
+// ✅ 루트 경로 응답 추가
+app.get('/', (req, res) => {
+  res.send('🎉 라쿤글로벌 카페24 앱이 정상 작동 중입니다!');
+});
+
+// (기존 라우터 설정 등은 유지)
+
 
 // ✅ 미들웨어 설정
 app.use(cors());
