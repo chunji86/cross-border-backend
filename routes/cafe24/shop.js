@@ -1,31 +1,33 @@
 const express = require('express');
-const axios = require('axios');
 const router = express.Router();
-const tokenManager = require('../../utils/tokenManager');
+const axios = require('axios');
+const { getValidAccessToken } = require('../../utils/tokenManager');
 
-// ✅ GET /api/cafe24/shop/products - 카페24 상품 목록 가져오기
+// ✅ 상품 목록 조회 (자동 토큰 갱신 포함)
 router.get('/products', async (req, res) => {
-  const mall_id = 'hanfen';
+  const mall_id = req.query.mall_id;
+  if (!mall_id) {
+    return res.status(400).json({ error: 'mall_id 파라미터가 필요합니다.' });
+  }
 
   try {
-    const tokenData = await tokenManager.getAccessToken(mall_id);
-    const accessToken = tokenData.access_token;
+    // 🔑 유효한 access_token 자동 획득 (만료 시 refresh)
+    const access_token = await getValidAccessToken(mall_id);
 
+    // ✅ 상품 목록 조회 API 호출
     const response = await axios.get(`https://${mall_id}.cafe24api.com/api/v2/admin/products`, {
       headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      }
+        Authorization: `Bearer ${access_token}`,
+      },
     });
 
     res.json(response.data);
   } catch (error) {
-    console.error('❌ [ERROR] 상품 목록 조회 실패:', error.message);
-    if (error.response) {
-      res.status(error.response.status).json(error.response.data);
-    } else {
-      res.status(500).json({ error: '상품 목록 조회 실패' });
-    }
+    console.error('❌ [shop.js] 상품 목록 조회 실패:', error.response?.data || error.message);
+    res.status(500).json({
+      error: '상품 목록 조회 실패',
+      details: error.response?.data || error.message,
+    });
   }
 });
 
