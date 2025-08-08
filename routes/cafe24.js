@@ -25,21 +25,23 @@ router.get('/callback', async (req, res) => {
     const tokenPayload = qs.stringify({
       grant_type: 'authorization_code',
       code,
-      client_id,
-      client_secret,
       redirect_uri,
     });
+
+    // ✅ Basic Auth 헤더 생성
+    const basicAuth = Buffer.from(`${client_id}:${client_secret}`).toString('base64');
 
     console.log('🔄 [3] 토큰 요청 전송 중...');
     const tokenResponse = await axios.post(tokenEndpoint, tokenPayload, {
       headers: {
+        'Authorization': `Basic ${basicAuth}`,
         'Content-Type': 'application/x-www-form-urlencoded',
       },
     });
 
     console.log('✅ [4] 토큰 응답 수신:', tokenResponse.data);
 
-    // 저장 시도
+    // 토큰 저장
     const tokenData = tokenResponse.data;
     const saveResult = await saveAccessToken(mall_id, tokenData);
 
