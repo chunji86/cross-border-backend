@@ -1,78 +1,80 @@
 // utils/tokenManager.js
-const fs = require('fs');
-const path = require('path');
 const axios = require('axios');
+const qs = require('qs');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
-// ✅ 토큰 파일 경로 생성
-function getTokenFilePath(mall_id) {
-  return path.join(__dirname, '..', 'tokens', `${mall_id}_token.json`);
+const CLIENT_ID = process.env.CAFE24_CLIENT_ID;
+const CLIENT_SECRET = process.env.CAFE24_CLIENT_SECRET;
+
+function b64(s) { return Buffer.from(s).toString('base64'); }
+function isExpired(expiresAt) {
+  return !expiresAt || new Date(expiresAt).getTime() <= Date.now();
 }
 
-// ✅ access_token 저장 함수
-function saveAccessToken(mall_id, tokenData) {
-  const tokenPath = getTokenFilePath(mall_id);
+async function getTokenRow(mallId) {
+  return prisma.cafe24Token.findUnique({ where: { mallId } });
+}
 
-  const formattedToken = {
-    ...tokenData,
-    expires_at: Math.floor(new Date(tokenData.expires_at).getTime() / 1000),
-    refresh_token_expires_at: Math.floor(new Date(tokenData.refresh_token_expires_at).getTime() / 1000),
-    issued_at: tokenData.issued_at,
+async function upsertTokens({ mallId, access_token, refresh_token, scope, expires_in }) {
+  const expiresAt = new Date(Date.now() + (expires_in - 60) * 1000);
+  return prisma.cafe24Token.upsert({
+    where: { mallId },
+    update: {
+      accessToken: access_token,
+      refreshToken: refresh_token ?? null,
+      scope: scope ?? null,
+      expiresAt
+    },
+    create: {
+      mallId,
+      accessToken: access_token,
+      refreshToken: refresh_token ?? null,
+      scope: scope ?? null,
+      expiresAt
+    }
+  });
+}
+
+async function tokenRequest(mallId, payload) {
+  const url = `https://${mallId}.cafe24api.com/api/v2/oauth/token`;
+  const headers = {
+    'Content-Type': 'application/x-www-form-urlencoded',
+    'Authorization': `Basic ${b64(`${CLIENT_ID}:${CLIENT_SECRET}`)}`
   };
-
-  fs.writeFileSync(tokenPath, JSON.stringify(formattedToken, null, 2));
+  const { data } = await axios.post(url, qs.stringify(payload), { headers, timeout: 15000 });
+  return data;
 }
 
-// ✅ access_token 유효성 검사 및 자동 갱신
-async function getValidAccessToken(mall_id) {
-  const tokenPath = getTokenFilePath(mall_id);
+async function refreshAccessToken(mallId) {
+  const row = await getTokenRow(mallId);
+  if (!row?.refreshToken) throw new Error('No refresh token saved');
+  const data = await tokenRequest(mallId, {
+    grant_type: 'refresh_token',
+    refresh_token: row.refreshToken
+  });
+  await upsertTokens({
+    mallId,
+    access_token: data.access_token,
+    refresh_token: data.refresh_token ?? row.refreshToken,
+    scope: data.scope ?? row.scope,
+    expires_in: data.expires_in
+  });
+  const updated = await getTokenRow(mallId);
+  return updated.accessToken;
+}
 
-  if (!fs.existsSync(tokenPath)) {
-    throw new Error('토큰 파일이 존재하지 않습니다.');
+// 항상 유효 토큰 반환 (없거나 만료면 자동 리프레시)
+async function getValidAccessToken(mallId) {
+  const row = await getTokenRow(mallId);
+  if (!row) throw new Error('Token not found for this mall_id');
+  if (isExpired(row.expiresAt)) {
+    return refreshAccessToken(mallId);
   }
-
-  const tokenData = JSON.parse(fs.readFileSync(tokenPath, 'utf-8'));
-  const now = Math.floor(Date.now() / 1000);
-
-  if (now < tokenData.expires_at) {
-    return tokenData.access_token;
-  }
-
-  // 토큰 만료 → refresh 요청
-  try {
-    const refreshResponse = await axios.post(
-      `https://${mall_id}.cafe24api.com/api/v2/oauth/token`,
-      new URLSearchParams({
-        grant_type: 'refresh_token',
-        refresh_token: tokenData.refresh_token,
-        client_id: process.env.CAFE24_CLIENT_ID,
-        client_secret: process.env.CAFE24_CLIENT_SECRET,
-      }),
-      {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      }
-    );
-
-    const newTokenData = refreshResponse.data;
-    const newExpiresAt = now + newTokenData.expires_in;
-
-    const updatedToken = {
-      ...tokenData,
-      access_token: newTokenData.access_token,
-      refresh_token: newTokenData.refresh_token || tokenData.refresh_token,
-      expires_at: newExpiresAt,
-    };
-
-    fs.writeFileSync(tokenPath, JSON.stringify(updatedToken, null, 2));
-    return updatedToken.access_token;
-  } catch (err) {
-    console.error('⚠️ 토큰 갱신 실패:', err.response?.data || err.message);
-    throw new Error('토큰 갱신 실패');
-  }
+  return row.accessToken;
 }
 
 module.exports = {
   getValidAccessToken,
-  saveAccessToken,
+  refreshAccessToken,
 };

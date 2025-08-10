@@ -93,3 +93,15 @@ model OrderItem {
   quantity  Int
   price     Int
 }
+
+model Cafe24Token {
+  id           Int      @id @default(autoincrement())
+  mallId       String   @unique
+  accessToken  String
+  refreshToken String?
+  scope        String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
