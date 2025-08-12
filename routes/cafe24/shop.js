@@ -5,7 +5,7 @@ const { ensureAccessToken, callCafe24 } = require('../../utils/cafe24Client');
 const { getCache, setCache } = require('../../utils/cache');
 const { loadState, saveState } = require('../../utils/syncState');
 
-// ===== 1) 토큰 테스트 =====
+/* -------------------- 1) 토큰 테스트 -------------------- */
 router.get('/test', async (req, res) => {
   try {
     const mall_id = req.query.mall_id;
@@ -19,7 +19,7 @@ router.get('/test', async (req, res) => {
   }
 });
 
-// ===== 2) 상품 목록 =====
+/* -------------------- 2) 상품 목록 -------------------- */
 router.get('/products', async (req, res) => {
   try {
     const mall_id = req.query.mall_id;
@@ -42,7 +42,7 @@ router.get('/products', async (req, res) => {
   }
 });
 
-// ===== 3) 상품 상세 =====
+/* -------------------- 3) 상품 상세 -------------------- */
 router.get('/product/:product_no', async (req, res) => {
   try {
     const mall_id = req.query.mall_id;
@@ -62,7 +62,77 @@ router.get('/product/:product_no', async (req, res) => {
   }
 });
 
-// ===== 4) 증분/전체 동기화 =====
+/* -------------------- 4) 옵션/변형(variants) 목록 -------------------- */
+// 공식 엔드포인트: GET /api/v2/admin/products/{product_no}/variants  :contentReference[oaicite:0]{index=0}
+router.get('/product/:product_no/variants', async (req, res) => {
+  try {
+    const mall_id = req.query.mall_id;
+    const shop_no = Number(req.query.shop_no || 1);
+    const product_no = req.params.product_no;
+    if (!mall_id) return res.status(400).json({ error: 'mall_id 파라미터가 필요합니다.' });
+
+    const data = await callCafe24(mall_id, `/api/v2/admin/products/${product_no}/variants`, {
+      method: 'GET',
+      shopNo: shop_no,
+    });
+
+    return res.json({ ok: true, mall_id, shop_no, product_no, count: data?.variants?.length || 0, data });
+  } catch (err) {
+    return res.status(500).json({ error: '옵션 목록 조회 실패', detail: err.data || err.response?.data || err.message });
+  }
+});
+
+/* -------------------- 5) 특정 변형 재고(inventories) 조회 -------------------- */
+// 공식 엔드포인트: GET /api/v2/admin/products/{product_no}/variants/{variant_code}/inventories  :contentReference[oaicite:1]{index=1}
+router.get('/product/:product_no/variants/:variant_code/inventories', async (req, res) => {
+  try {
+    const mall_id = req.query.mall_id;
+    const shop_no = Number(req.query.shop_no || 1);
+    const product_no = req.params.product_no;
+    const variant_code = req.params.variant_code;
+    if (!mall_id) return res.status(400).json({ error: 'mall_id 파라미터가 필요합니다.' });
+
+    const data = await callCafe24(
+      mall_id,
+      `/api/v2/admin/products/${product_no}/variants/${encodeURIComponent(variant_code)}/inventories`,
+      { method: 'GET', shopNo: shop_no }
+    );
+
+    return res.json({ ok: true, mall_id, shop_no, product_no, variant_code, data });
+  } catch (err) {
+    return res.status(500).json({ error: '재고 조회 실패', detail: err.data || err.response?.data || err.message });
+  }
+});
+
+/* -------------------- 6) 상세 + 옵션/재고 한번에(embed) -------------------- */
+// embed=variants,inventories 지원  :contentReference[oaicite:2]{index=2}
+router.get('/product/:product_no/with', async (req, res) => {
+  try {
+    const mall_id = req.query.mall_id;
+    const shop_no = Number(req.query.shop_no || 1);
+    const product_no = req.params.product_no;
+    if (!mall_id) return res.status(400).json({ error: 'mall_id 파라미터가 필요합니다.' });
+
+    const data = await callCafe24(mall_id, `/api/v2/admin/products/${product_no}`, {
+      method: 'GET',
+      params: { embed: 'variants,inventories' },
+      shopNo: shop_no,
+    });
+
+    const variants = data?.variants || data?.product?.variants || [];
+    const inventories = data?.inventories || data?.product?.inventories || [];
+    return res.json({
+      ok: true, mall_id, shop_no, product_no,
+      variants_count: Array.isArray(variants) ? variants.length : 0,
+      inventories_count: Array.isArray(inventories) ? inventories.length : 0,
+      data
+    });
+  } catch (err) {
+    return res.status(500).json({ error: '상세+옵션+재고 조회 실패', detail: err.data || err.response?.data || err.message });
+  }
+});
+
+/* -------------------- 7) 증분/전체 동기화 -------------------- */
 function getUpdatedAt(p) {
   return new Date(
     p.updated_date || p.updated_at || p.modified_date || p.modified_at || p.created_date || p.created_at || 0
