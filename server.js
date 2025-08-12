@@ -4,6 +4,8 @@ const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const path = require('path');
 const app = express();
+require('dotenv').config();
+
 
 // ✅ 루트 경로 응답 추가
 app.get('/', (req, res) => {
