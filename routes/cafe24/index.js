@@ -96,5 +96,6 @@ router.get('/callback', async (req, res) => {
 
 // 하위(shop) 라우터
 router.use('/shop', require('./shop'));
+router.use('/token', require('./token')); // ← 추가
 
 module.exports = router;

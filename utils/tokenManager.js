@@ -2,51 +2,53 @@
 const fs = require('fs');
 const path = require('path');
 
-const TOKENS_DIR = path.join(process.cwd(), 'tokens');
-if (!fs.existsSync(TOKENS_DIR)) fs.mkdirSync(TOKENS_DIR, { recursive: true });
+const DATA_DIR = path.join(process.cwd(), 'data');
 
-function tokenFile(mallId) {
-  return path.join(TOKENS_DIR, `${mallId}_token.json`);
+function ensureDir(p) {
+  if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
 }
 
-function loadToken(mallId) {
+function tokenPath(mallId, shopNo = 1) {
+  const dir = path.join(DATA_DIR, mallId);
+  ensureDir(dir);
+  return path.join(dir, `${shopNo}.json`);
+}
+
+function loadToken(mallId, shopNo = 1) {
   try {
-    const p = tokenFile(mallId);
+    const p = tokenPath(mallId, shopNo);
     if (!fs.existsSync(p)) return null;
-    const raw = JSON.parse(fs.readFileSync(p, 'utf-8'));
-    return raw;
+    return JSON.parse(fs.readFileSync(p, 'utf-8'));
   } catch {
     return null;
   }
 }
 
-function saveToken(mallId, tokenObj) {
-  const p = tokenFile(mallId);
-  // expires_in이 null이면 2시간(7200초)로 기본값 설정
+// expires_at 5분 전부터 만료로 간주
+function isExpired(tokenObj, safetySeconds = 300) {
+  if (!tokenObj || !tokenObj.expires_at) return true;
+  const now = Date.now();
+  const exp = new Date(tokenObj.expires_at).getTime();
+  return now >= exp - safetySeconds * 1000;
+}
+
+function saveToken(mallId, tokenObj, shopNo = 1) {
   const issuedAt = new Date();
-  const expiresInSec = Number(tokenObj.expires_in || 7200);
+  const expiresInSec = Number(tokenObj.expires_in || 7200); // 기본 2시간
   const expiresAt = new Date(issuedAt.getTime() + expiresInSec * 1000).toISOString();
 
   const normalized = {
-    ...tokenObj,
+    access_token: tokenObj.access_token,
+    refresh_token: tokenObj.refresh_token,
+    token_type: tokenObj.token_type || 'Bearer',
+    scope: tokenObj.scope || null,
     issued_at: issuedAt.toISOString(),
     expires_at: expiresAt,
+    raw: tokenObj, // 원문(마스킹 필요 시 로그 금지)
   };
 
-  fs.writeFileSync(p, JSON.stringify(normalized, null, 2), 'utf-8');
+  fs.writeFileSync(tokenPath(mallId, shopNo), JSON.stringify(normalized, null, 2), 'utf-8');
   return normalized;
 }
 
-function isExpired(tokenObj, safetySeconds = 60) {
-  if (!tokenObj || !tokenObj.expires_at) return true;
-  const now = new Date();
-  const expiresAt = new Date(tokenObj.expires_at);
-  // 안전 마진(safetySeconds) 전에 갱신
-  return now.getTime() >= (expiresAt.getTime() - safetySeconds * 1000);
-}
-
-module.exports = {
-  loadToken,
-  saveToken,
-  isExpired,
-};
+module.exports = { loadToken, saveToken, isExpired, tokenPath };
