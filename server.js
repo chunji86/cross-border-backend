@@ -61,6 +61,7 @@ app.use('/api/test', testRoutes);
 app.use('/api/cafe24/save-products', saveProductsRouter);
 app.use('/api/cafe24/token', cafe24TokenDebug);
 app.use('/api/cafe24/shop', require('./routes/cafe24/shop'));
+app.use('/api/cafe24', require('./routes/cafe24')); 
 
 
 app.use('/api/auth', authRoutes);
@@ -77,8 +78,9 @@ app.use('/api/admin/withdrawals', adminWithdrawalsRoutes);
 app.use('/api/commissions', commissionsRoutes);
 app.use('/api/purchase', purchaseRoutes);
 
+
 // ✅ 서버 실행
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`✅ Server is running on http://localhost:${PORT}`);
 });
