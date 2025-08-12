@@ -54,6 +54,7 @@ const commissionsRoutes = require('./routes/commissions');
 const purchaseRoutes = require('./routes/purchase');
 
 // ✅ 실제 API 라우터 사용
+app.use('/api/cafe24', require('./routes/cafe24'));
 app.use('/api/cafe24/shop', cafe24ShopRouter);  // 💡 먼저 선언
 app.use('/api/cafe24', cafe24Routes);
 app.use('/api/cafe24', cafe24SyncRouter);
@@ -61,8 +62,36 @@ app.use('/api/cafe24-sync', cafe24SyncRouter);
 app.use('/api/test', testRoutes);
 app.use('/api/cafe24/save-products', saveProductsRouter);
 app.use('/api/cafe24/token', cafe24TokenDebug);
-app.use('/api/cafe24', require('./routes/cafe24'));
+
 console.log('✅ Cafe24 routes mounted at /api/cafe24'); 
+// 디버그: 등록된 라우트를 확인하기 위한 엔드포인트
+app.get('/__routes', (req, res) => {
+  const routes = [];
+
+  function add(path, layer) {
+    if (layer.route && layer.route.path) {
+      const methods = Object.keys(layer.route.methods)
+        .filter(m => layer.route.methods[m])
+        .map(m => m.toUpperCase());
+      routes.push({ path: path + layer.route.path, methods });
+    } else if (layer.name === 'router' && layer.handle.stack) {
+      layer.handle.stack.forEach(nested => add(path + (layer.regexp?.fast_slash ? '' : ''), nested));
+    }
+  }
+
+  app._router.stack.forEach(layer => {
+    if (layer.name === 'router' && layer.handle.stack) {
+      // 마운트된 경로(prefix)
+      const prefix = layer.regexp?.fast_slash ? '' : (layer.regexp?.source || '');
+    }
+  });
+
+  // 간단 버전: Express 4에서 prefix까지 적출하기 복잡하므로, 문자열로 찍습니다.
+  const stack = app._router.stack
+    .map(l => l.route ? { path: l.route.path, methods: Object.keys(l.route.methods)} : l.name)
+  res.json({ ok: true, note: '간단 덤프', stack });
+});
+
 
 
 app.use('/api/auth', authRoutes);
