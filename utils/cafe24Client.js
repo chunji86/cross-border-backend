@@ -49,4 +49,17 @@ async function callCafe24(
   path,
   { method = 'GET', params = {}, data = {}, shopNo = DEFAULT_SHOP_NO, apiVersion = DEFAULT_API_VERSION } = {}
 ) {
-  const access
+  const accessToken = await ensureAccessToken(mallId);
+  const base = `https://${mallId}.cafe24api.com`;
+  const headers = {
+    Authorization: `Bearer ${accessToken}`,
+    'X-Cafe24-Api-Version': apiVersion,            // ✅ 항상 값 있음
+    'X-Cafe24-Api-Access-Token-Type': 'user',
+    'X-Cafe24-Shop-No': String(shopNo),
+    'Content-Type': 'application/json',
+  };
+  const resp = await axios({ url: `${base}${path}`, method, headers, params, data });
+  return resp.data;
+}
+
+module.exports = { ensureAccessToken, callCafe24 };
