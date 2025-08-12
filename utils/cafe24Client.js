@@ -7,7 +7,7 @@ const CAFE24_CLIENT_ID = process.env.CAFE24_CLIENT_ID;
 const CAFE24_CLIENT_SECRET = process.env.CAFE24_CLIENT_SECRET;
 
 // ✅ 기본값 포함 (env 없더라도 동작)
-const DEFAULT_API_VERSION = process.env.CAFE24_API_VERSION || '2024-12-01';
+const DEFAULT_API_VERSION = process.env.CAFE24_API_VERSION || '2025-06-01';
 const DEFAULT_SHOP_NO    = Number(process.env.CAFE24_SHOP_NO || 1);
 
 async function refreshAccessToken(mallId, refresh_token) {
