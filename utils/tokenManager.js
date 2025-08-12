@@ -1,8 +1,7 @@
 // utils/tokenManager.js
+const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), 'data');
 const fs = require('fs');
 const path = require('path');
-
-const DATA_DIR   = path.join(process.cwd(), 'data');
 const LEGACY_DIR = path.join(process.cwd(), 'tokens');              // ← 예전 위치
 
 function ensureDir(p){ if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true }); }

@@ -27,6 +27,7 @@ app.use('/partials', express.static(path.join(__dirname, 'frontend/partials')));
 // ✅ 카페24 라우터 “단 한 번”만 마운트
 app.use('/api/cafe24', require('./routes/cafe24'));
 console.log('✅ Cafe24 routes mounted at /api/cafe24');
+app.use('/api', require('./routes/_ops')); // /api/health, /api/env-check
 
 // ✅ /api/cafe24 핑(404 진단용 고정 엔드포인트)
 app.get('/api/cafe24', (req, res) =>
