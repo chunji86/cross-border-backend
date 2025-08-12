@@ -1,4 +1,3 @@
-// routes/cafe24/index.js
 const express = require('express');
 const axios = require('axios');
 const querystring = require('querystring');
@@ -10,10 +9,10 @@ const CAFE24_CLIENT_SECRET = process.env.CAFE24_CLIENT_SECRET;
 const CAFE24_REDIRECT_URI = process.env.CAFE24_REDIRECT_URI;
 const DEFAULT_SCOPE = process.env.CAFE24_SCOPE || 'mall.read_product mall.write_product';
 
-// 핑 (마운트 확인용)
+// ✅ 라우터 동작 확인용
 router.get('/', (req, res) => res.json({ ok: true, where: '/api/cafe24' }));
 
-// 설치 시작
+// ✅ 설치 시작
 router.get('/start', async (req, res) => {
   try {
     const mall_id = req.query.mall_id;
@@ -39,7 +38,7 @@ router.get('/start', async (req, res) => {
   }
 });
 
-// 콜백 (토큰 교환)
+// ✅ 콜백 (토큰 교환)
 router.get('/callback', async (req, res) => {
   try {
     const { code, state } = req.query;
@@ -62,6 +61,7 @@ router.get('/callback', async (req, res) => {
   }
 });
 
-// /shop 하위 라우터
+// ✅ /shop 서브라우터 연결
 router.use('/shop', require('./shop'));
+
 module.exports = router;

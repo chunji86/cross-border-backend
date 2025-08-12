@@ -1,10 +1,10 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const cookieParser = require('cookie-parser');
 const path = require('path');
 const app = express();
-require('dotenv').config();
+
 
 
 // ✅ 루트 경로 응답 추가
@@ -60,7 +60,8 @@ app.use('/api/cafe24-sync', cafe24SyncRouter);
 app.use('/api/test', testRoutes);
 app.use('/api/cafe24/save-products', saveProductsRouter);
 app.use('/api/cafe24/token', cafe24TokenDebug);
-app.use('/api/cafe24', require('./routes/cafe24')); 
+app.use('/api/cafe24', require('./routes/cafe24'));
+console.log('✅ Cafe24 routes mounted at /api/cafe24'); 
 
 
 app.use('/api/auth', authRoutes);
