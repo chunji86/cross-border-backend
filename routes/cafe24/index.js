@@ -116,5 +116,7 @@ router.get('/callback', async (req, res) => {
 // 하위 라우터
 router.use('/token', require('./token')); // 수동 갱신: POST /api/cafe24/token/refresh
 router.use('/shop', require('./shop'));   // /test /products /product/:no /sync ...
+router.use('/ops', require('./ops')); // GET /api/cafe24/ops/status?mall_id=...&shop_no=1
+
 
 module.exports = router;
