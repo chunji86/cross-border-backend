@@ -237,4 +237,72 @@ router.get('/sync', async (req, res) => {
   }
 });
 
+// 상세+옵션+재고를 가볍게 가공해서 리턴
+router.get('/product/:product_no/lean', async (req, res) => {
+  try {
+    const mall_id = req.query.mall_id;
+    const shop_no = Number(req.query.shop_no || 1);
+    const product_no = req.params.product_no;
+    if (!mall_id) return res.status(400).json({ error: 'mall_id 파라미터가 필요합니다.' });
+
+    // embed 한 번 호출
+    const raw = await callCafe24(mall_id, `/api/v2/admin/products/${product_no}`, {
+      method: 'GET',
+      params: { embed: 'variants,inventories' },
+      shopNo: shop_no,
+    });
+
+    const product = raw.product || raw; // 일부 응답은 product 루트에 있음
+    const variants = product.variants || raw.variants || [];
+    const inventories = product.inventories || raw.inventories || [];
+
+    // variant_code 기준으로 재고 묶기(필드명이 몰마다 다를 수 있어 안전하게 처리)
+    const invByVariant = {};
+    for (const inv of Array.isArray(inventories) ? inventories : []) {
+      const vcode = inv.variant_code || inv.variantId || inv.variant || inv.code;
+      if (!vcode) continue;
+      (invByVariant[vcode] ||= []).push({
+        warehouse: inv.warehouse_code || inv.warehouseId || inv.warehouse || null,
+        qty: Number(inv.quantity ?? inv.stock ?? inv.available ?? 0),
+      });
+    }
+
+    const lean = variants.map(v => {
+      const vcode = v.variant_code || v.code || v.id;
+      const options = [
+        v.option_value1, v.option_value2, v.option_value3,
+        v.option_value4, v.option_value5,
+      ].filter(Boolean);
+      const invList = invByVariant[vcode] || [];
+      const totalQty = invList.reduce((s, i) => s + (Number.isFinite(i.qty) ? i.qty : 0), 0);
+
+      return {
+        variant_code: vcode,
+        sku: v.sku || v.custom_variant_code || null,
+        options,
+        price: Number(v.price ?? v.selling_price ?? v.retail_price ?? 0),
+        use_inventory: v.use_inventory ?? null,
+        inventory_total: totalQty,
+        inventory_by_warehouse: invList,
+      };
+    });
+
+    res.json({
+      ok: true,
+      mall_id, shop_no, product_no,
+      product: {
+        product_no: product.product_no,
+        product_code: product.product_code,
+        name: product.product_name || product.name || null,
+        price: Number(product.price ?? product.retail_price ?? 0),
+      },
+      variants: lean,
+      counts: { variants: lean.length, inventories: inventories.length || 0 },
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'lean 조회 실패', detail: err.data || err.response?.data || err.message });
+  }
+});
+
+
 module.exports = router;
