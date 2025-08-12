@@ -57,6 +57,7 @@ router.get('/start', async (req, res) => {
 });
 
 // ✅ 콜백 (토큰 교환)
+// routes/cafe24/index.js (콜백 부분만 발췌)
 router.get('/callback', async (req, res) => {
   try {
     const { code, state } = req.query;
@@ -64,18 +65,26 @@ router.get('/callback', async (req, res) => {
     const [mall_id] = String(state).split(':');
 
     const tokenUrl = `https://${mall_id}.cafe24api.com/api/v2/oauth/token`;
+    const client_id = process.env.CAFE24_CLIENT_ID;
+    const client_secret = process.env.CAFE24_CLIENT_SECRET;
+    const redirect_uri = process.env.CAFE24_REDIRECT_URI;
+
     const body = querystring.stringify({
       grant_type: 'authorization_code',
       code,
-      redirect_uri: CAFE24_REDIRECT_URI,
-      client_id: CAFE24_CLIENT_ID,
-      client_secret: CAFE24_CLIENT_SECRET,
+      redirect_uri,
+      // (선택) client_id/secret을 바디에도 포함해도 되지만,
+      // 핵심은 Authorization 헤더를 반드시 포함하는 것입니다.
+      client_id,
+      client_secret
     });
 
-    const resp = await axios.post(tokenUrl, body, {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-    });
+    const headers = {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      Authorization: 'Basic ' + Buffer.from(`${client_id}:${client_secret}`).toString('base64'),
+    };
 
+    const resp = await axios.post(tokenUrl, body, { headers });
     const saved = saveToken(mall_id, resp.data);
     return res.json({ ok: true, mall_id, token_saved: true, expires_in: saved.expires_in ?? null });
   } catch (e) {
@@ -83,6 +92,7 @@ router.get('/callback', async (req, res) => {
     return res.status(500).json({ error: '카페24 토큰 요청 실패', detail: e.response?.data || e.message });
   }
 });
+
 
 // 하위(shop) 라우터
 router.use('/shop', require('./shop'));

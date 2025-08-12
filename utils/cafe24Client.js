@@ -1,21 +1,13 @@
-// utils/cafe24Client.js
+// utils/cafe24Client.js (refreshAccessToken 함수만 교체)
 const axios = require('axios');
 const querystring = require('querystring');
 const { loadToken, saveToken, isExpired } = require('./tokenManager');
 
-const CAFE24_API_VERSION = process.env.CAFE24_API_VERSION || '2024-12-01';
 const CAFE24_CLIENT_ID = process.env.CAFE24_CLIENT_ID;
 const CAFE24_CLIENT_SECRET = process.env.CAFE24_CLIENT_SECRET;
-// 멀티샵이면 shop_no 헤더 필요 (미사용이면 1로 고정)
-const DEFAULT_SHOP_NO = Number(process.env.CAFE24_SHOP_NO || 1);
-
-if (!CAFE24_CLIENT_ID || !CAFE24_CLIENT_SECRET) {
-  console.warn('⚠️  CAFE24_CLIENT_ID / CAFE24_CLIENT_SECRET 환경변수를 확인하세요.');
-}
 
 async function refreshAccessToken(mallId, refresh_token) {
-  const base = `https://${mallId}.cafe24api.com`;
-  const url = `${base}/api/v2/oauth/token`;
+  const url = `https://${mallId}.cafe24api.com/api/v2/oauth/token`;
 
   const body = querystring.stringify({
     grant_type: 'refresh_token',
@@ -26,12 +18,13 @@ async function refreshAccessToken(mallId, refresh_token) {
 
   const headers = {
     'Content-Type': 'application/x-www-form-urlencoded',
+    Authorization: 'Basic ' + Buffer.from(`${CAFE24_CLIENT_ID}:${CAFE24_CLIENT_SECRET}`).toString('base64'),
   };
 
   const resp = await axios.post(url, body, { headers });
-  // 카페24는 리프레시 시 새 refresh_token이 함께 올 수 있음 → 반드시 덮어쓰기
-  return resp.data;
+  return resp.data; // 새 access_token(+ 새 refresh_token 가능) 반환
 }
+
 
 /**
  * mallId 기준으로 유효한 access_token을 확보한다.
