@@ -3,7 +3,6 @@ const express = require('express');
 const axios = require('axios');
 const querystring = require('querystring');
 const router = express.Router();
-
 const { saveToken } = require('../../utils/tokenManager');
 
 const CAFE24_CLIENT_ID = process.env.CAFE24_CLIENT_ID;
@@ -11,10 +10,10 @@ const CAFE24_CLIENT_SECRET = process.env.CAFE24_CLIENT_SECRET;
 const CAFE24_REDIRECT_URI = process.env.CAFE24_REDIRECT_URI;
 const DEFAULT_SCOPE = process.env.CAFE24_SCOPE || 'mall.read_product mall.write_product';
 
-// 루트 핑(마운트 확인용)
+// 핑 (마운트 확인용)
 router.get('/', (req, res) => res.json({ ok: true, where: '/api/cafe24' }));
 
-// ✅ 설치 시작
+// 설치 시작
 router.get('/start', async (req, res) => {
   try {
     const mall_id = req.query.mall_id;
@@ -40,12 +39,12 @@ router.get('/start', async (req, res) => {
   }
 });
 
-// ✅ 콜백(토큰 교환)
+// 콜백 (토큰 교환)
 router.get('/callback', async (req, res) => {
   try {
     const { code, state } = req.query;
     if (!code || !state) return res.status(400).send('code/state가 없습니다.');
-    const [mall_id, shop_no_str] = String(state).split(':');
+    const [mall_id] = String(state).split(':');
     const tokenUrl = `https://${mall_id}.cafe24api.com/api/v2/oauth/token`;
     const body = querystring.stringify({
       grant_type: 'authorization_code',
@@ -63,7 +62,6 @@ router.get('/callback', async (req, res) => {
   }
 });
 
-// ✅ /shop 서브라우터 연결(이미 만들어두신 products/test 등 엔드포인트)
+// /shop 하위 라우터
 router.use('/shop', require('./shop'));
-
 module.exports = router;
