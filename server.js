@@ -58,6 +58,7 @@ app.use('/api/cafe24-sync', cafe24SyncRouter);
 app.use('/api/test', testRoutes);
 app.use('/api/cafe24/save-products', saveProductsRouter);
 app.use('/api/cafe24/token', cafe24TokenDebug);
+app.use('/api/cafe24/shop', require('./routes/cafe24/shop'));
 
 
 app.use('/api/auth', authRoutes);

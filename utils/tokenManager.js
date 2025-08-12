@@ -1,80 +1,52 @@
 // utils/tokenManager.js
-const axios = require('axios');
-const qs = require('qs');
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const fs = require('fs');
+const path = require('path');
 
-const CLIENT_ID = process.env.CAFE24_CLIENT_ID;
-const CLIENT_SECRET = process.env.CAFE24_CLIENT_SECRET;
+const TOKENS_DIR = path.join(process.cwd(), 'tokens');
+if (!fs.existsSync(TOKENS_DIR)) fs.mkdirSync(TOKENS_DIR, { recursive: true });
 
-function b64(s) { return Buffer.from(s).toString('base64'); }
-function isExpired(expiresAt) {
-  return !expiresAt || new Date(expiresAt).getTime() <= Date.now();
+function tokenFile(mallId) {
+  return path.join(TOKENS_DIR, `${mallId}_token.json`);
 }
 
-async function getTokenRow(mallId) {
-  return prisma.cafe24Token.findUnique({ where: { mallId } });
-}
-
-async function upsertTokens({ mallId, access_token, refresh_token, scope, expires_in }) {
-  const expiresAt = new Date(Date.now() + (expires_in - 60) * 1000);
-  return prisma.cafe24Token.upsert({
-    where: { mallId },
-    update: {
-      accessToken: access_token,
-      refreshToken: refresh_token ?? null,
-      scope: scope ?? null,
-      expiresAt
-    },
-    create: {
-      mallId,
-      accessToken: access_token,
-      refreshToken: refresh_token ?? null,
-      scope: scope ?? null,
-      expiresAt
-    }
-  });
-}
-
-async function tokenRequest(mallId, payload) {
-  const url = `https://${mallId}.cafe24api.com/api/v2/oauth/token`;
-  const headers = {
-    'Content-Type': 'application/x-www-form-urlencoded',
-    'Authorization': `Basic ${b64(`${CLIENT_ID}:${CLIENT_SECRET}`)}`
-  };
-  const { data } = await axios.post(url, qs.stringify(payload), { headers, timeout: 15000 });
-  return data;
-}
-
-async function refreshAccessToken(mallId) {
-  const row = await getTokenRow(mallId);
-  if (!row?.refreshToken) throw new Error('No refresh token saved');
-  const data = await tokenRequest(mallId, {
-    grant_type: 'refresh_token',
-    refresh_token: row.refreshToken
-  });
-  await upsertTokens({
-    mallId,
-    access_token: data.access_token,
-    refresh_token: data.refresh_token ?? row.refreshToken,
-    scope: data.scope ?? row.scope,
-    expires_in: data.expires_in
-  });
-  const updated = await getTokenRow(mallId);
-  return updated.accessToken;
-}
-
-// 항상 유효 토큰 반환 (없거나 만료면 자동 리프레시)
-async function getValidAccessToken(mallId) {
-  const row = await getTokenRow(mallId);
-  if (!row) throw new Error('Token not found for this mall_id');
-  if (isExpired(row.expiresAt)) {
-    return refreshAccessToken(mallId);
+function loadToken(mallId) {
+  try {
+    const p = tokenFile(mallId);
+    if (!fs.existsSync(p)) return null;
+    const raw = JSON.parse(fs.readFileSync(p, 'utf-8'));
+    return raw;
+  } catch {
+    return null;
   }
-  return row.accessToken;
+}
+
+function saveToken(mallId, tokenObj) {
+  const p = tokenFile(mallId);
+  // expires_in이 null이면 2시간(7200초)로 기본값 설정
+  const issuedAt = new Date();
+  const expiresInSec = Number(tokenObj.expires_in || 7200);
+  const expiresAt = new Date(issuedAt.getTime() + expiresInSec * 1000).toISOString();
+
+  const normalized = {
+    ...tokenObj,
+    issued_at: issuedAt.toISOString(),
+    expires_at: expiresAt,
+  };
+
+  fs.writeFileSync(p, JSON.stringify(normalized, null, 2), 'utf-8');
+  return normalized;
+}
+
+function isExpired(tokenObj, safetySeconds = 60) {
+  if (!tokenObj || !tokenObj.expires_at) return true;
+  const now = new Date();
+  const expiresAt = new Date(tokenObj.expires_at);
+  // 안전 마진(safetySeconds) 전에 갱신
+  return now.getTime() >= (expiresAt.getTime() - safetySeconds * 1000);
 }
 
 module.exports = {
-  getValidAccessToken,
-  refreshAccessToken,
+  loadToken,
+  saveToken,
+  isExpired,
 };
