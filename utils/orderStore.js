@@ -1,7 +1,7 @@
-// utils/orderStore.js
 const fs = require('fs');
 const path = require('path');
-const { tokenPath } = require('./tokenManager'); // DATA_DIR 판별 재사용
+const { tokenPath } = require('./tokenManager');
+const { getLinkByCode, rebuildCache } = require('./linkStore');
 
 function dataDirFor(mall_id, shop_no) {
   const base = path.dirname(tokenPath(mall_id, shop_no)); // .../data/{mall_id}
@@ -13,10 +13,17 @@ function storePath(mall_id, shop_no) {
   return path.join(dataDirFor(mall_id, shop_no), 'orders.json');
 }
 
-// 주문 정규화 (필드명이 몰/버전마다 조금씩 달라 안전하게 매핑)
+function extractRc(raw) {
+  const s = JSON.stringify(raw || {});
+  const m = s.match(/[?&]rc=([a-zA-Z0-9_-]+)/);
+  return m ? m[1] : null;
+}
+
 function normalize(order) {
   const o = order || {};
   const items = o.items || o.order_items || o.products || [];
+  const rc = extractRc(o);
+
   return {
     order_no: o.order_no || o.order_id || o.id || null,
     order_date: o.order_date || o.created_date || o.created_at || null,
@@ -28,7 +35,7 @@ function normalize(order) {
     order_status: o.order_status || o.status || null,
     total_price: Number(o.total_price ?? o.payment_amount ?? 0),
     buyer_id: o.member_id || o.buyer_id || null,
-    receiver: o.receiver || null,
+    rc,  // ← 링크 코드 추출(있으면)
     items: items.map(it => ({
       product_no: it.product_no || it.product_id || null,
       variant_code: it.variant_code || it.sku || null,
@@ -40,33 +47,45 @@ function normalize(order) {
   };
 }
 
-// 파일 읽기/쓰기
 function readAll(mall_id, shop_no) {
   try {
     const p = storePath(mall_id, shop_no);
-    if (!fs.existsSync(p)) return { rows: [], map: {} };
-    const json = JSON.parse(fs.readFileSync(p, 'utf-8'));
-    const rows = Array.isArray(json?.rows) ? json.rows : [];
-    const map = Object.create(null);
-    for (const r of rows) map[r.order_no] = r;
-    return { rows, map };
-  } catch { return { rows: [], map: {} }; }
+    if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf-8'));
+  } catch {}
+  return { rows: [], map: {} };
 }
 function writeAll(mall_id, shop_no, rows) {
   const p = storePath(mall_id, shop_no);
   fs.writeFileSync(p, JSON.stringify({ rows }, null, 2), 'utf-8');
 }
 
-// upsert
 function upsertOrders(mall_id, shop_no, orders) {
-  const { rows, map } = readAll(mall_id, shop_no);
+  // 링크 캐시를 한 번 갱신(최초 시도 시)
+  try { rebuildCache(mall_id, shop_no); } catch {}
+
+  const data = readAll(mall_id, shop_no);
+  const rows = Array.isArray(data.rows) ? data.rows : [];
+  const map = Object.create(null);
+  for (const r of rows) map[r.order_no] = r;
+
   let changed = 0;
   for (const o of orders) {
     const n = normalize(o);
     if (!n.order_no) continue;
-    if (!map[n.order_no]) { rows.push(n); map[n.order_no] = n; changed++; }
-    else {
-      // 업데이트: 최신 raw로 교체
+
+    // rc → influencer 매핑
+    let influencer_id = null;
+    if (n.rc) {
+      const link = getLinkByCode(n.rc);
+      if (link && String(link.mall_id) === String(mall_id) && Number(link.shop_no) === Number(shop_no)) {
+        influencer_id = link.influencer_id;
+      }
+    }
+    n.influencer_id = influencer_id;
+
+    if (!map[n.order_no]) {
+      rows.push(n); map[n.order_no] = n; changed++;
+    } else {
       const idx = rows.findIndex(r => r.order_no === n.order_no);
       rows[idx] = n; map[n.order_no] = n; changed++;
     }
@@ -75,7 +94,6 @@ function upsertOrders(mall_id, shop_no, orders) {
   return changed;
 }
 
-// 쿼리
 function listOrders(mall_id, shop_no, { confirmed=null, status=null, influencer_id=null } = {}) {
   const { rows } = readAll(mall_id, shop_no);
   let out = rows;
@@ -92,7 +110,9 @@ function listOrders(mall_id, shop_no, { confirmed=null, status=null, influencer_
       (status === 'purchase_confirm' && r.purchaseconfirmation_date)
     );
   }
-  // influencer_id 필터는 Phase 2에서 링크/할당 매핑 후 적용
+  if (influencer_id) {
+    out = out.filter(r => r.influencer_id === influencer_id);
+  }
   return out;
 }
 
