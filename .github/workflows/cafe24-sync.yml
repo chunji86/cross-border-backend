@@ -1,0 +1,52 @@
+name: Cafe24 Sync (hourly)
+
+on:
+  schedule:
+    # UTC 기준 매 정시에 실행 (원하면 '*/30 * * * *' 등으로 변경)
+    - cron: "0 * * * *"
+  workflow_dispatch: {}  # 수동 실행 버튼
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cafe24-sync-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call /api/jobs/orders/sync-all with backoff
+        env:
+          BASE_URL: ${{ secrets.BASE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+
+          # 최대 5회 재시도 (15s, 30s, 45s, 60s, 75s)
+          attempts=5
+          for i in $(seq 1 $attempts); do
+            status=$(curl -sS -o /tmp/resp.json \
+              -H "Accept: application/json" \
+              -H "x-cron-token: $CRON_SECRET" \
+              -w "%{http_code}" \
+              "$BASE_URL/api/jobs/orders/sync-all")
+
+            echo "HTTP $status"
+            cat /tmp/resp.json || true
+            echo
+
+            if [ "$status" = "200" ]; then
+              echo "✅ Sync-all OK"
+              exit 0
+            fi
+
+            if [ "$i" -lt "$attempts" ]; then
+              sleep $(( i * 15 ))
+              echo "Retrying... ($i/$attempts)"
+            fi
+          done
+
+          echo "❌ Failed after $attempts attempts"
+          exit 1
