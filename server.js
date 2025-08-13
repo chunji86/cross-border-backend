@@ -49,6 +49,7 @@ try {
 } catch (e) {
   console.warn('⚠️ /api/app routes not mounted (optional):', e.message);
 }
+app.use('/api/jobs',   require('./routes/jobs'));   // ✅ 크론용
 
 // ──────────────────────────────────────────────
 // 헬스체크 & 유틸
