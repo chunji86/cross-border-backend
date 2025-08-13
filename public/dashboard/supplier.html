@@ -5,12 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>공급사 대시보드</title>
 
-  <!-- Tailwind CDN (빠른 시연용) -->
+  <!-- Tailwind (시연용) -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- 사용자 제공 CSS (선택) -->
+  <!-- 선택: 사용자 CSS -->
   <link rel="stylesheet" href="/public/css/style.css">
-  <!-- ↑ /public/css/style.css 로 복사해 두세요 -->
 </head>
 <body class="bg-gray-50 min-h-screen">
   <header class="bg-white border-b sticky top-0 z-10">
@@ -21,7 +20,7 @@
   </header>
 
   <main class="max-w-6xl mx-auto px-4 py-6 space-y-8">
-    <!-- 연결/상태 영역 -->
+    <!-- 연결/상태 -->
     <section class="bg-white rounded-xl border p-4">
       <div class="flex flex-wrap items-end gap-3">
         <div>
@@ -33,7 +32,7 @@
           <input id="shop" type="number" class="border rounded px-3 py-2 w-24" value="1" min="1"/>
         </div>
         <div class="flex gap-2">
-          <button id="btnStatus" class="btn btn-primary bg-blue-600 text-white px-4 py-2 rounded">상태 조회</button>
+          <button id="btnStatus" class="bg-blue-600 text-white px-4 py-2 rounded">상태 조회</button>
           <button id="btnSync"   class="px-4 py-2 rounded border">주문 동기화</button>
         </div>
         <div class="ml-auto text-sm text-gray-500">
@@ -67,6 +66,79 @@
       <div class="bg-white rounded-xl border p-4">
         <div class="text-sm text-gray-500">구매확정 주문 수</div>
         <div id="kpiConfirmed" class="text-2xl font-semibold">-</div>
+      </div>
+    </section>
+
+    <!-- 🔹 리워드 설정 (전역/인플루언서별) -->
+    <section class="bg-white rounded-xl border p-4">
+      <div class="flex items-center justify-between">
+        <h2 class="font-semibold">리워드 설정</h2>
+        <div class="flex gap-2">
+          <button id="btnLoadReward" class="px-3 py-1 rounded border">불러오기</button>
+          <button id="btnSaveReward" class="bg-green-600 text-white px-3 py-1 rounded">저장</button>
+        </div>
+      </div>
+
+      <div class="mt-4 grid md:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-sm text-gray-600 mb-1">전역 기본율 (%)</label>
+          <input id="defaultRate" type="number" step="0.1" min="0" max="100"
+                 class="border rounded px-3 py-2 w-40" placeholder="예: 10 (10%)"/>
+          <p class="text-xs text-gray-500 mt-1">저장 시 자동으로 소수(0.10)로 변환됩니다.</p>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between">
+            <label class="block text-sm text-gray-600">인플루언서별 기본율 (%)</label>
+            <button id="btnAddRow" class="px-2 py-1 rounded border text-sm">행 추가</button>
+          </div>
+          <div class="mt-2 border rounded">
+            <table class="min-w-full text-sm">
+              <thead class="bg-gray-100 text-gray-600">
+                <tr>
+                  <th class="text-left px-3 py-2">influencer_id</th>
+                  <th class="text-left px-3 py-2">기본율(%)</th>
+                  <th class="text-left px-3 py-2"></th>
+                </tr>
+              </thead>
+              <tbody id="rate-rows"></tbody>
+            </table>
+          </div>
+          <p class="text-xs text-gray-500 mt-1">* 비워두면 전역 기본율이 적용됩니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 🔹 할당/링크 생성 -->
+    <section class="bg-white rounded-xl border p-4">
+      <h2 class="font-semibold mb-3">할당 / 링크 생성</h2>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="space-y-2">
+          <label class="block text-sm text-gray-600">상품번호 (product_no)</label>
+          <input id="aProduct" type="number" class="border rounded px-3 py-2 w-full" placeholder="예: 45"/>
+          <label class="block text-sm text-gray-600 mt-2">인플루언서 ID</label>
+          <input id="aInfluencer" class="border rounded px-3 py-2 w-full" placeholder="예: inf-001"/>
+          <div class="flex items-center gap-2 mt-2">
+            <input id="aEnabled" type="checkbox" class="accent-blue-600" checked/>
+            <label for="aEnabled" class="text-sm text-gray-700">활성화</label>
+          </div>
+          <label class="block text-sm text-gray-600 mt-2">개별율(%) (선택)</label>
+          <input id="aRate" type="number" step="0.1" min="0" max="100" class="border rounded px-3 py-2 w-full" placeholder="비워두면 기본율"/>
+          <button id="btnAssign" class="w-full bg-indigo-600 text-white px-3 py-2 rounded mt-2">할당 저장</button>
+        </div>
+
+        <div class="space-y-2">
+          <label class="block text-sm text-gray-600">캠페인명 (선택)</label>
+          <input id="lCampaign" class="border rounded px-3 py-2 w-full" placeholder="예: august"/>
+          <button id="btnLink" class="w-full bg-slate-700 text-white px-3 py-2 rounded mt-2">링크 생성</button>
+          <div id="linkOut" class="text-sm text-gray-600 mt-2 break-all"></div>
+        </div>
+
+        <div class="text-sm text-gray-600">
+          <p class="mb-2">• 할당 저장 → 상품과 인플루언서 매칭 + (선택) 개별율 설정</p>
+          <p class="mb-2">• 링크 생성 → <code>/api/app/go/:code</code>로 리다이렉트되어 상품 상세로 이동하며, URL에 <code>rc</code> 파라미터가 붙습니다.</p>
+          <p class="mb-2">• 구매확정 상태에서만 리워드 확정됩니다.</p>
+        </div>
       </div>
     </section>
 
@@ -137,7 +209,7 @@
 
   <script>
   const $ = (id)=>document.getElementById(id);
-  const BASE = window.location.origin; // 같은 서버에서 API 호출
+  const BASE = window.location.origin; // 같은 서버
 
   function setPill(txt, ok=true) {
     const el = $('pill');
@@ -146,10 +218,35 @@
   }
   function showLog(obj){ $('out').textContent = JSON.stringify(obj, null, 2); }
 
-  // KPI 집계
+  // 숫자 변환 유틸
+  const toNum = (v)=> (v===null||v===undefined||v==='') ? null : Number(v);
+  const pctToDecimal = (pct)=> (pct===''||pct===null||pct===undefined) ? null : Math.max(0, Number(pct))/100;
+  const decimalToPct = (dec)=> (dec===null||dec===undefined) ? '' : Math.round(Number(dec)*1000)/10; // 한 자리 소수
+
+  // KPI
   function sumQty(items){ return (items||[]).reduce((s,it)=> s + (Number(it.qty)||0), 0); }
 
-  // 상품 불러오기
+  // 상태 조회
+  async function checkStatus(){
+    const mall_id = $('mall').value, shop_no = $('shop').value;
+    const url = `${BASE}/api/cafe24/ops/status?mall_id=${mall_id}&shop_no=${shop_no}`;
+    const r = await fetch(url); const j = await r.json(); showLog(j);
+    if (j.ok) setPill(`만료까지 ${j.seconds_left}s`, true);
+    else setPill('토큰 없음', false);
+  }
+
+  // 주문 동기화
+  async function syncOrders(){
+    const mall_id = $('mall').value, shop_no = $('shop').value;
+    const start = $('startDate').value || '';
+    const end   = $('endDate').value   || '';
+    const qs = (start && end) ? `&start=${start}&end=${end}` : '';
+    const url = `${BASE}/api/cafe24/orders/sync?mall_id=${mall_id}&shop_no=${shop_no}${qs}`;
+    const r = await fetch(url); const j = await r.json(); showLog(j);
+    await loadOrders();
+  }
+
+  // 상품
   async function loadProducts(){
     const mall_id = $('mall').value, shop_no = $('shop').value;
     const page = Number($('prodPage').value||1), limit = Math.max(1, Math.min(100, Number($('prodLimit').value||50)));
@@ -176,7 +273,7 @@
     });
   }
 
-  // 주문 불러오기
+  // 주문
   async function loadOrders(){
     const mall_id = $('mall').value, shop_no = $('shop').value;
     const sel = $('confirmedSel').value;
@@ -193,43 +290,117 @@
       const name = (o.items?.[0]?.name) || '-';
       const qty = sumQty(o.items);
       const amount = o.total_price ?? 0;
-      const infl = o.influencer_id || '—';
-
+      const influencer = o.influencer_id || '—';
       let status = '미발송';
       if (o.shipbegin_date) status = '배송중';
       if (o.shipend_date)   status = '배송완료';
       if (o.purchaseconfirmation_date) status = '구매확정';
-
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td class="px-4 py-2">${o.order_no||''}</td>
         <td class="px-4 py-2">${name}</td>
         <td class="px-4 py-2">${qty}</td>
         <td class="px-4 py-2">${amount}</td>
-        <td class="px-4 py-2">${infl}</td>
+        <td class="px-4 py-2">${influencer}</td>
         <td class="px-4 py-2">${status}</td>`;
       tbody.appendChild(tr);
     });
   }
 
-  // 상태 조회 (토큰 잔여 시간 등)
-  async function checkStatus(){
+  // 🔸 리워드 설정 불러오기
+  async function loadReward(){
     const mall_id = $('mall').value, shop_no = $('shop').value;
-    const url = `${BASE}/api/cafe24/ops/status?mall_id=${mall_id}&shop_no=${shop_no}`;
-    const r = await fetch(url); const j = await r.json(); showLog(j);
-    if (j.ok) setPill(`만료까지 ${j.seconds_left}s`, true);
-    else setPill('토큰 없음', false);
+    const u = `${BASE}/api/app/supplier/rewards/config?mall_id=${mall_id}&shop_no=${shop_no}`;
+    const r = await fetch(u); const j = await r.json(); showLog(j);
+
+    // 전역율
+    $('defaultRate').value = decimalToPct(j.default_rate ?? 0.1);
+
+    // 인플루언서별 표
+    const tbody = $('rate-rows'); tbody.innerHTML = '';
+    const map = j.influencers || {};
+    Object.keys(map).forEach(id=>{
+      addRateRow(id, decimalToPct(map[id]));
+    });
   }
 
-  // 주문 동기화
-  async function syncOrders(){
+  // 🔸 리워드 설정 저장
+  async function saveReward(){
     const mall_id = $('mall').value, shop_no = $('shop').value;
-    const start = $('startDate').value || '';
-    const end   = $('endDate').value   || '';
-    const qs = (start && end) ? `&start=${start}&end=${end}` : '';
-    const url = `${BASE}/api/cafe24/orders/sync?mall_id=${mall_id}&shop_no=${shop_no}${qs}`;
-    const r = await fetch(url); const j = await r.json(); showLog(j);
-    await loadOrders(); // 동기화 후 즉시 갱신
+
+    // 전역율
+    const default_rate = pctToDecimal($('defaultRate').value);
+
+    // 인플루언서별
+    const rows = Array.from(document.querySelectorAll('#rate-rows tr'));
+    const influencers = {};
+    rows.forEach(tr=>{
+      const id = tr.querySelector('input[data-k="id"]').value.trim();
+      const pct = tr.querySelector('input[data-k="rate"]').value;
+      if (!id) return;
+      const dec = pctToDecimal(pct);
+      if (dec !== null) influencers[id] = dec;
+    });
+
+    const u = `${BASE}/api/app/supplier/rewards/config?mall_id=${mall_id}&shop_no=${shop_no}`;
+    const r = await fetch(u, {
+      method:'PUT',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ default_rate, influencers })
+    });
+    const j = await r.json(); showLog(j);
+    if (j.ok) alert('저장 완료');
+  }
+
+  // 🔸 할당 저장
+  async function doAssign(){
+    const mall_id = $('mall').value, shop_no = $('shop').value;
+    const product_no = Number($('aProduct').value);
+    const influencer_id = $('aInfluencer').value.trim();
+    const enabled = $('aEnabled').checked;
+    const commission_rate = pctToDecimal($('aRate').value);
+    if (!product_no || !influencer_id) return alert('product_no와 influencer_id를 입력하세요.');
+
+    const u = `${BASE}/api/app/supplier/assign?mall_id=${mall_id}&shop_no=${shop_no}`;
+    const r = await fetch(u, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ product_no, influencer_id, enabled, commission_rate })
+    });
+    const j = await r.json(); showLog(j);
+    if (j.ok) alert('할당 저장 완료');
+  }
+
+  // 🔸 링크 생성
+  async function doLink(){
+    const mall_id = $('mall').value, shop_no = $('shop').value;
+    const product_no = Number($('aProduct').value);
+    const influencer_id = $('aInfluencer').value.trim();
+    const campaign = $('lCampaign').value.trim() || null;
+    if (!product_no || !influencer_id) return alert('product_no와 influencer_id를 입력하세요.');
+
+    const u = `${BASE}/api/app/supplier/link?mall_id=${mall_id}&shop_no=${shop_no}`;
+    const r = await fetch(u, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ product_no, influencer_id, campaign })
+    });
+    const j = await r.json(); showLog(j);
+    if (j.ok) {
+      const full = `${BASE}/api/app/go/${j.code}`;
+      $('linkOut').innerHTML = `코드: <code>${j.code}</code><br/>링크: <a class="text-blue-600 underline" href="${full}" target="_blank">${full}</a>`;
+    }
+  }
+
+  // 인플루언서율 행 추가/삭제
+  function addRateRow(id='', pct=''){
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="px-3 py-2"><input data-k="id" class="border rounded px-2 py-1 w-full" placeholder="inf-001" value="${id}"/></td>
+      <td class="px-3 py-2"><input data-k="rate" type="number" step="0.1" min="0" max="100" class="border rounded px-2 py-1 w-28" placeholder="예: 12.5" value="${pct}"/></td>
+      <td class="px-3 py-2 text-right"><button class="px-2 py-1 rounded border text-xs" onclick="this.closest('tr').remove()">삭제</button></td>
+    `;
+    $('rate-rows').appendChild(tr);
   }
 
   // 초기화: 날짜 기본값 = 최근 7일
@@ -241,16 +412,25 @@
     $('endDate').value = end;
   }
 
+  // 초기 로드
   document.addEventListener('DOMContentLoaded', async ()=>{
     initDates();
     await checkStatus();
-    await Promise.all([loadProducts(), loadOrders()]);
+    await Promise.all([loadProducts(), loadOrders(), loadReward()]);
   });
 
+  // 이벤트 바인딩
   $('btnStatus').addEventListener('click', checkStatus);
+  $('btnSync').addEventListener('click', syncOrders);
   $('btnLoadProducts').addEventListener('click', loadProducts);
   $('btnLoadOrders').addEventListener('click', loadOrders);
-  $('btnSync').addEventListener('click', syncOrders);
+
+  $('btnLoadReward').addEventListener('click', loadReward);
+  $('btnSaveReward').addEventListener('click', saveReward);
+  $('btnAddRow').addEventListener('click', ()=>addRateRow());
+
+  $('btnAssign').addEventListener('click', doAssign);
+  $('btnLink').addEventListener('click', doLink);
   </script>
 </body>
 </html>
