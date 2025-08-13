@@ -48,6 +48,8 @@ app.use('/api/admin/products', require('./routes/adminProducts'));
 app.use('/api/admin/withdrawals', require('./routes/adminWithdrawals'));
 app.use('/api/commissions', require('./routes/commissions'));
 app.use('/api/purchase', require('./routes/purchase'));
+router.use('/orders', require('./orders')); // ← 신규: 주문 동기화/조회
+
 
 /* -------------------- 루트 페이지 -------------------- */
 app.get('/', (req, res) => {
