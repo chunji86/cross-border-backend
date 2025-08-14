@@ -36,6 +36,11 @@ app.get('/dashboard/admin',      (req, res) => {
 // ──────────────────────────────────────────────
 // API 라우트 마운트
 // ──────────────────────────────────────────────
+
+app.use('/public', express.static(path.join(__dirname, 'public'), {
+  maxAge: '1h',
+}));
+
 try {
   app.use('/api/cafe24', require('./routes/cafe24')); // routes/cafe24/index.js
   console.log('✅ Cafe24 routes mounted at /api/cafe24');
