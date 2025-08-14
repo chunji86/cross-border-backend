@@ -88,6 +88,7 @@ model Order {
   updatedAt   DateTime    @updatedAt
   user        User?       @relation(fields: [userId], references: [id])
   orderItems  OrderItem[]
+   rc         String?  // ✅ 인플루언서 코드 저장
 }
 
 model OrderItem {
@@ -118,4 +119,23 @@ model Commission {
   createdAt   DateTime  @default(now())
   OrderItem   OrderItem @relation(fields: [orderItemId], references: [id])
   User        User      @relation(fields: [userId], references: [id])
+}
+
+model RcAttribution {
+  id         String   @id @default(cuid())
+  mallId     String
+  shopNo     String
+  cid        String        // raccoon_cid (고객 브라우저 식별)
+  rc         String?       // 인플루언서 코드
+  event      String        // 'view' | 'checkout' | 'order_result'
+  url        String?
+  referrer   String?
+  orderNoHint String?      // 위젯이 추정한 주문번호(있으면)
+  ip         String?
+  userAgent  String?
+  matched    Boolean  @default(false) // 주문과 매칭 완료 여부
+  createdAt  DateTime @default(now())
+
+  @@index([mallId, shopNo, cid, createdAt])
+  @@index([mallId, createdAt])
 }

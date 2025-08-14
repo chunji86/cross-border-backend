@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const { callCafe24 } = require('../../utils/cafe24Client');
 const { upsertOrders, listOrders } = require('../../utils/orderStore');
+const { attachRcBulk } = require('../../utils/rcAttribution'); // ✅ 추가
 
 // 날짜 헬퍼
 function iso(d){ return new Date(d).toISOString().slice(0,10); }
@@ -25,12 +26,11 @@ router.get('/sync', async (req, res) => {
 
     let totalFetched = 0;
     while (page <= maxPages) {
-      // 버전/몰마다 파라미터 키가 다를 수 있어 유연하게: created/updated 기준 병행
       const params = {
         limit, page,
         // created 기준
         start_date: start, end_date: end,
-        // updated 기준 (일부 몰에서 이 키를 사용)
+        // updated 기준(몰/버전 편차 대응)
         created_start_date: start, created_end_date: end,
       };
 
@@ -38,8 +38,11 @@ router.get('/sync', async (req, res) => {
         method: 'GET', params, shopNo: shop_no
       });
 
-      const orders = Array.isArray(data?.orders) ? data.orders : [];
+      let orders = Array.isArray(data?.orders) ? data.orders : [];
       if (!orders.length) break;
+
+      // ✅ 여기서 rc 자동 매칭을 적용한 뒤 저장한다
+      orders = await attachRcBulk(mall_id, shop_no, orders);
 
       // 정규화 & 적재
       upsertOrders(mall_id, shop_no, orders);
