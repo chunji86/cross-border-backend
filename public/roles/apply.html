@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <title>역할 신청</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; padding: 20px; }
+    .box { max-width: 520px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 12px; }
+    button { padding: 10px 14px; border-radius: 10px; border: 1px solid #d1d5db; cursor: pointer; }
+    .row { display: flex; gap: 8px; margin-top: 12px; }
+    .pill { display:inline-block; padding:6px 10px; border-radius:9999px; background:#eef2ff; }
+    .muted { color:#6b7280; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>역할 신청</h2>
+    <div id="state" class="muted">상태 확인 중…</div>
+
+    <div class="row" id="loginRow" style="display:none">
+      <button id="loginBtn">카페24 로그인</button>
+    </div>
+
+    <div class="row" id="applyRow" style="display:none">
+      <button id="applyInf">인플루언서 신청</button>
+      <button id="applySup">공급사 신청</button>
+    </div>
+
+    <div id="approvedRow" style="display:none; margin-top:12px">
+      <span class="pill" id="rolePill"></span>
+      <div class="row">
+        <button id="shareBtn" style="display:none">내 공유링크 복사</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+const mall_id = new URLSearchParams(location.search).get('mall_id') || location.hostname.split('.')[0];
+const shop_no = new URLSearchParams(location.search).get('shop_no') || '1';
+
+async function fetchJSON(url, opts) {
+  const r = await fetch(url, Object.assign({ credentials:'include' }, opts));
+  return r.json();
+}
+
+async function refresh() {
+  const st = document.getElementById('state');
+  try {
+    const me = await fetchJSON('/api/roles/me');
+    if (!me.ok) throw new Error();
+    const u = me.user || { status:'none' };
+
+    if (u.status === 'none') {
+      st.textContent = '로그인이 필요합니다.';
+      loginRow.style.display = '';
+      applyRow.style.display = 'none';
+      approvedRow.style.display = 'none';
+      return;
+    }
+
+    // 로그인되어 있음
+    if (u.status === 'pending') {
+      st.textContent = '신청 상태: 심사중';
+      loginRow.style.display = 'none';
+      applyRow.style.display = 'none';
+      approvedRow.style.display = '';
+      rolePill.textContent = (u.role === 'influencer' ? '인플루언서' : '공급사') + ' (심사중)';
+      shareBtn.style.display = 'none';
+    } else if (u.status === 'approved') {
+      st.textContent = '승인 완료';
+      loginRow.style.display = 'none';
+      applyRow.style.display = 'none';
+      approvedRow.style.display = '';
+      rolePill.textContent = (u.role === 'influencer' ? '인플루언서' : '공급사') + ' (승인)';
+      shareBtn.style.display = (u.role === 'influencer') ? '' : 'none';
+    } else if (u.status === 'rejected') {
+      st.textContent = '거절됨. 다시 신청할 수 있습니다.';
+      loginRow.style.display = 'none';
+      applyRow.style.display = '';
+      approvedRow.style.display = 'none';
+    } else {
+      st.textContent = '상태: ' + u.status;
+    }
+  } catch {
+    // not logged in
+    st.textContent = '로그인이 필요합니다.';
+    loginRow.style.display = '';
+    applyRow.style.display = 'none';
+    approvedRow.style.display = 'none';
+  }
+}
+
+loginBtn.onclick = () => {
+  const redirect = encodeURIComponent('/public/roles/apply.html');
+  location.href = `/api/oauth/login?mall_id=${encodeURIComponent(mall_id)}&shop_no=${encodeURIComponent(shop_no)}&redirect=${redirect}`;
+};
+applyInf.onclick = async () => {
+  const r = await fetchJSON('/api/roles/apply', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ type:'influencer' }) });
+  if (r.ok) refresh();
+};
+applySup.onclick = async () => {
+  const r = await fetchJSON('/api/roles/apply', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ type:'supplier' }) });
+  if (r.ok) refresh();
+};
+shareBtn.onclick = async () => {
+  const path = location.pathname; // 현재 페이지 경로 기준
+  const r = await fetchJSON('/api/roles/my-share-link?path=' + encodeURIComponent(path));
+  if (r.ok) {
+    await navigator.clipboard.writeText(r.url);
+    alert('공유링크를 복사했습니다:\n' + r.url);
+  }
+};
+
+refresh();
+</script>
+</body>
+</html>
