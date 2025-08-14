@@ -180,5 +180,6 @@ app.listen(PORT, () => {
   console.log(`✅ Server is running on http://localhost:${PORT}`);
 });
 
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/influencer/auth', require('./routes/influencer-auth'));
+app.use('/api/oauth', require('./routes/oauth-storefront'));
+app.use('/api/roles', require('./routes/roles'));
+app.use('/api/app/public', require('./routes/app/public'));
