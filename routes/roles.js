@@ -24,40 +24,46 @@ router.post('/apply-with-id', (req, res) => {
   const {
     mall_id,
     shop_no = '1',
-    customer_id,          // ← 카페24 고객 ID (필수)
-    type,                 // 'influencer' | 'supplier'
-    name,
-    phone,
-    sns_url,
-    bank_name,
-    bank_holder,
-    bank_account,
+    customer_id,                // ← 필수: 카페24 고객 ID (로그인된 회원)
+    type,                       // 'influencer' 고정 사용 권장
+    channels                    // [{ type:'YouTube', url:'https://...' }, ...]
   } = req.body || {};
 
-  if (!mall_id || !customer_id || !['influencer','supplier'].includes(type)) {
-    return res.status(400).json({ ok:false, error:'missing mall_id/customer_id/type' });
+  if (!mall_id || !customer_id || type !== 'influencer') {
+    return res.status(400).json({ ok:false, error:'missing mall_id/customer_id or invalid type' });
+  }
+
+  // 채널 유효성 간단 체크
+  const ALLOWED = ['YouTube','TikTok','Instagram','Blog','Facebook','X','Twitch','Other'];
+  const normChannels = Array.isArray(channels) ? channels
+    .map(c => ({
+      type: String(c?.type || '').trim(),
+      url:  String(c?.url  || '').trim()
+    }))
+    .filter(c => c.type && c.url && ALLOWED.includes(c.type))
+    : [];
+
+  if (normChannels.length === 0) {
+    return res.status(400).json({ ok:false, error:'at least one valid channel required' });
   }
 
   const now = new Date().toISOString();
-
-  // 이미 승인되어 있으면 그대로 유지, 아니면 'pending'
   const cur = getUser(mall_id, shop_no, customer_id);
 
   const payload = {
-    role: type,
+    role: 'influencer',
     status: cur?.status === 'approved' ? 'approved' : 'pending',
     applied_at: cur?.applied_at || now,
-    applicant: { name, phone, sns_url, bank_name, bank_holder, bank_account },
+    applicant: { channels: normChannels },     // 👈 저장 포인트
   };
 
-  // 인플루언서는 코드 고정 생성 (예: inf-<member_id>)
-  if (type === 'influencer' && !cur?.influencer_code) {
+  if (!cur?.influencer_code) {
     payload.influencer_code = `inf-${customer_id}`;
   }
 
   const user = setUser(mall_id, shop_no, customer_id, payload);
 
-  // (선택) 세션 바인딩용 URL: 이미 몰 로그인 상태면 대개 사용자 입력 없이 빠르게 통과
+  // 우리 백엔드 세션을 조용히 묶고 싶으면 bind_url 제공(이미 몰 로그인이라 보통 화면 깜빡임만 있음)
   const bind_url =
     `/api/oauth/login?mall_id=${encodeURIComponent(mall_id)}&shop_no=${encodeURIComponent(shop_no)}` +
     `&redirect=${encodeURIComponent('/public/roles/apply.html')}`;
