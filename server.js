@@ -4,6 +4,8 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 
@@ -13,6 +15,8 @@ const app = express();
 app.disable('x-powered-by');
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
 // app.set('trust proxy', true); // 프록시 환경이면 주석 해제
 
 // ──────────────────────────────────────────────
@@ -38,6 +42,41 @@ const corsOptions = {
   allowedHeaders: ['Content-Type'],
   maxAge: 86400
 };
+
+// JWT 세션 헬퍼
+function setSession(res, payload) {
+  const token = jwt.sign(payload, process.env.SESSION_SECRET, { expiresIn: '7d' });
+  res.cookie('cb_session', token, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: true, // https 권장
+    maxAge: 7 * 24 * 3600 * 1000
+  });
+}
+function readSession(req) {
+  const t = req.cookies?.cb_session;
+  if (!t) return null;
+  try { return jwt.verify(t, process.env.SESSION_SECRET); } catch { return null; }
+}
+function requireRole(role) {
+  return (req, res, next) => {
+    const sess = readSession(req);
+    if (!sess || (role && sess.role !== role)) {
+      return res.status(401).json({ error: 'unauthorized' });
+    }
+    req.sessionUser = sess;
+    next();
+  };
+}
+
+// 대시보드 보호 예시 (필요 시 각 라우터에 미들웨어)
+app.get('/dashboard/supplier', (req, res, next) => {
+  const sess = readSession(req);
+  if (!sess || !['supplier','admin'].includes(sess.role)) {
+    return res.status(302).redirect('/public/please-login.html');
+  }
+  res.sendFile(path.join(__dirname, 'public', 'dashboard', 'supplier.html'));
+});
 
 app.use(cors(corsOptions));
 // ⛔ path-to-regexp v8에서 '*' 금지 → 정규식으로 대체
@@ -140,3 +179,6 @@ const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`✅ Server is running on http://localhost:${PORT}`);
 });
+
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/influencer/auth', require('./routes/influencer-auth'));
