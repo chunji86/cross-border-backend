@@ -29,36 +29,42 @@ router.get('/login', (req, res) => {
 
 router.get('/callback', async (req, res) => {
   const { code, state } = req.query;
-  if (!code || !state) return res.status(400).send('missing code/state');
 
+  // ✅ 방어: code/state 없으면 안내 페이지로 되돌리기
+  if (!code || !state) {
+    return res.redirect('/public/roles/apply.html?oauth=missing_params');
+  }
+
+  // (이 아래는 기존 그대로)
   const { mall_id, shop_no = '1', redirect = '/public/roles/apply.html' } =
     JSON.parse(Buffer.from(String(state), 'base64url').toString('utf8'));
 
-  // 토큰 교환
   const tokenResp = await fetch(`https://${mall_id}.cafe24api.com/api/v2/oauth/token`, {
     method: 'POST',
     headers: { 'Content-Type':'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       grant_type: 'authorization_code',
       code,
-      redirect_uri: REDIRECT_URI,
-      client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET
+      redirect_uri: process.env.CAFE24_STOREFRONT_REDIRECT_URI,
+      client_id: process.env.CAFE24_CLIENT_ID,
+      client_secret: process.env.CAFE24_CLIENT_SECRET
     })
   });
   const token = await tokenResp.json();
-  if (!token.access_token) return res.status(400).send('token exchange failed');
+  if (!token.access_token) return res.redirect('/public/roles/apply.html?oauth=token_exchange_failed');
 
-  // 고객 본인 정보
   const meResp = await fetch(`https://${mall_id}.cafe24api.com/api/v2/customers/me`, {
     headers: { Authorization: `Bearer ${token.access_token}` }
   });
   const me = await meResp.json();
   const customer = me?.customer;
-  if (!customer?.member_id) return res.status(400).send('failed to fetch customer');
+  if (!customer?.member_id) return res.redirect('/public/roles/apply.html?oauth=no_customer');
 
-  setSession(res, { mall_id, shop_no, customer_id: String(customer.member_id) });
+  const jwt = require('jsonwebtoken');
+  const SESSION_SECRET = process.env.SESSION_SECRET || 'dev-session';
+  const t = jwt.sign({ mall_id, shop_no, customer_id: String(customer.member_id) }, SESSION_SECRET, { expiresIn: '7d' });
+  res.cookie('cb_session', t, { httpOnly: true, sameSite: 'lax', secure: true, maxAge: 7*24*3600*1000 });
+
   res.redirect(redirect);
 });
-
 module.exports = router;

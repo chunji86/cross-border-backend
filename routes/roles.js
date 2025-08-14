@@ -19,6 +19,52 @@ function requireLogin(req, res, next) {
 
 // [고객] 역할 신청
 // POST /api/roles/apply { type: 'influencer' | 'supplier' }
+// 고객ID를 알고 있는 경우(몰 로그인 완료 상태) 바로 신청 저장
+router.post('/apply-with-id', (req, res) => {
+  const {
+    mall_id,
+    shop_no = '1',
+    customer_id,          // ← 카페24 고객 ID (필수)
+    type,                 // 'influencer' | 'supplier'
+    name,
+    phone,
+    sns_url,
+    bank_name,
+    bank_holder,
+    bank_account,
+  } = req.body || {};
+
+  if (!mall_id || !customer_id || !['influencer','supplier'].includes(type)) {
+    return res.status(400).json({ ok:false, error:'missing mall_id/customer_id/type' });
+  }
+
+  const now = new Date().toISOString();
+
+  // 이미 승인되어 있으면 그대로 유지, 아니면 'pending'
+  const cur = getUser(mall_id, shop_no, customer_id);
+
+  const payload = {
+    role: type,
+    status: cur?.status === 'approved' ? 'approved' : 'pending',
+    applied_at: cur?.applied_at || now,
+    applicant: { name, phone, sns_url, bank_name, bank_holder, bank_account },
+  };
+
+  // 인플루언서는 코드 고정 생성 (예: inf-<member_id>)
+  if (type === 'influencer' && !cur?.influencer_code) {
+    payload.influencer_code = `inf-${customer_id}`;
+  }
+
+  const user = setUser(mall_id, shop_no, customer_id, payload);
+
+  // (선택) 세션 바인딩용 URL: 이미 몰 로그인 상태면 대개 사용자 입력 없이 빠르게 통과
+  const bind_url =
+    `/api/oauth/login?mall_id=${encodeURIComponent(mall_id)}&shop_no=${encodeURIComponent(shop_no)}` +
+    `&redirect=${encodeURIComponent('/public/roles/apply.html')}`;
+
+  return res.json({ ok:true, user, bind_url });
+});
+
 router.post('/apply', requireLogin, (req, res) => {
   const { type } = req.body || {};
   if (!['influencer', 'supplier'].includes(type)) {
