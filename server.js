@@ -183,3 +183,4 @@ app.listen(PORT, () => {
 app.use('/api/oauth', require('./routes/oauth-storefront'));
 app.use('/api/roles', require('./routes/roles'));
 app.use('/api/app/public', require('./routes/app/public'));
+app.use('/public', express.static(path.join(__dirname, 'public')));

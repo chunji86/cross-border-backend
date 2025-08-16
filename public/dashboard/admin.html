@@ -16,7 +16,6 @@
   </header>
 
   <main class="max-w-7xl mx-auto px-4 py-6 space-y-8">
-    <!-- 컨트롤 -->
     <section class="bg-white rounded-xl border p-4">
       <div class="flex flex-wrap items-end gap-3">
         <div>
@@ -46,7 +45,6 @@
       </div>
     </section>
 
-    <!-- KPI -->
     <section class="grid grid-cols-1 md:grid-cols-4 gap-4">
       <div class="bg-white rounded-xl border p-4"><div class="text-sm text-gray-500">총 주문</div><div id="kpiAll" class="text-2xl font-semibold">-</div></div>
       <div class="bg-white rounded-xl border p-4"><div class="text-sm text-gray-500">구매확정</div><div id="kpiConfirmed" class="text-2xl font-semibold">-</div></div>
@@ -54,7 +52,6 @@
       <div class="bg-white rounded-xl border p-4"><div class="text-sm text-gray-500">인플루언서 수</div><div id="kpiInfluencers" class="text-2xl font-semibold">-</div></div>
     </section>
 
-    <!-- Top 인플루언서 -->
     <section class="bg-white rounded-xl border">
       <div class="p-4 flex items-center justify-between gap-3">
         <h2 class="font-semibold">Top 인플루언서 (확정 매출)</h2>
@@ -73,7 +70,6 @@
       </div>
     </section>
 
-    <!-- 최근 주문 -->
     <section class="bg-white rounded-xl border">
       <div class="p-4"><h2 class="font-semibold">최근 주문</h2></div>
       <div class="overflow-x-auto">
@@ -93,13 +89,13 @@
       </div>
     </section>
 
-    <!-- 로그 -->
     <section class="bg-white rounded-xl border p-4">
       <div class="text-sm text-gray-500">최근 응답</div>
       <pre id="out" class="bg-gray-900 text-gray-200 rounded p-3 overflow-auto" style="max-height:260px;">{}</pre>
     </section>
   </main>
 
+  <script src="/public/dashboard/app.js"></script>
   <script>
   const $ = id => document.getElementById(id);
   const BASE = window.location.origin;
@@ -123,16 +119,13 @@
     const confirmedOrders = orders.filter(o=>!!o.purchaseconfirmation_date);
     const confirmed = confirmedOrders.length;
     const revenue = confirmedOrders.reduce((s,o)=> s + (Number(o.total_price)||0), 0);
-
     const byInf = {};
     confirmedOrders.forEach(o=>{
       const id = o.influencer_id || '—';
       if (!byInf[id]) byInf[id] = { id, orders: 0, revenue: 0 };
-      byInf[id].orders += 1;
-      byInf[id].revenue += Number(o.total_price)||0;
+      byInf[id].orders += 1; byInf[id].revenue += Number(o.total_price)||0;
     });
     const rank = Object.values(byInf).sort((a,b)=> b.revenue - a.revenue);
-
     return { all, confirmed, revenue, rank };
   }
 
@@ -140,7 +133,7 @@
     const mall_id = $('mall').value, shop_no = $('shop').value;
     const q = confirmed==null ? '' : `&confirmed=${confirmed?1:0}`;
     const u = `${BASE}/api/cafe24/orders/list?mall_id=${mall_id}&shop_no=${shop_no}${q}`;
-    const r = await fetch(u); const j = await r.json(); showLog(j);
+    const j = await App.json(u); showLog(j);
     return j?.orders || [];
   }
 
@@ -149,21 +142,16 @@
     const { all, confirmed, revenue, rank } = agg(orders);
     $('kpiAll').textContent       = all;
     $('kpiConfirmed').textContent = confirmed;
-    $('kpiRevenue').textContent   = new Intl.NumberFormat('ko-KR').format(revenue);
+    $('kpiRevenue').textContent   = App.number(revenue);
     $('kpiInfluencers').textContent = new Set(orders.map(o=>o.influencer_id).filter(Boolean)).size;
 
-    // Top 인플루언서
     const tbody1 = $('rank-list'); tbody1.innerHTML = '';
     rank.forEach(r=>{
       const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td class="px-4 py-2">${r.id}</td>
-        <td class="px-4 py-2">${r.orders}</td>
-        <td class="px-4 py-2">${new Intl.NumberFormat('ko-KR').format(r.revenue)}</td>`;
+      tr.innerHTML = `<td class="px-4 py-2">${r.id}</td><td class="px-4 py-2">${r.orders}</td><td class="px-4 py-2">${App.number(r.revenue)}</td>`;
       tbody1.appendChild(tr);
     });
 
-    // 최근 주문
     const tbody2 = $('order-list'); tbody2.innerHTML = '';
     orders.slice(-50).reverse().forEach(o=>{
       const name = (o.items?.[0]?.name)||'-';
@@ -188,14 +176,14 @@
     const end   = $('endDate').value   || '';
     const qs = (start && end) ? `&start=${start}&end=${end}` : '';
     const u = `${BASE}/api/cafe24/orders/sync?mall_id=${mall_id}&shop_no=${shop_no}${qs}`;
-    const r = await fetch(u); const j = await r.json(); showLog(j);
+    const j = await App.json(u); showLog(j);
     await reload();
   }
 
   async function checkStatus(){
     const mall_id = $('mall').value, shop_no = $('shop').value;
     const u = `${BASE}/api/cafe24/ops/status?mall_id=${mall_id}&shop_no=${shop_no}`;
-    const r = await fetch(u); const j = await r.json(); showLog(j);
+    const j = await App.json(u); showLog(j);
     setPill(j.ok ? `만료까지 ${j.seconds_left}s` : '토큰 없음', !!j.ok);
   }
 
@@ -203,15 +191,10 @@
     const today = new Date();
     const end = today.toISOString().slice(0,10);
     const startDate = new Date(today.getTime()-6*24*3600*1000).toISOString().slice(0,10);
-    $('startDate').value = startDate;
-    $('endDate').value = end;
+    $('startDate').value = startDate; $('endDate').value = end;
   }
 
-  document.addEventListener('DOMContentLoaded', async ()=>{
-    initDates();
-    await checkStatus();
-    await reload();
-  });
+  document.addEventListener('DOMContentLoaded', async ()=>{ initDates(); await checkStatus(); await reload(); });
   $('btnStatus').addEventListener('click', checkStatus);
   $('btnSync').addEventListener('click', syncOrders);
   $('btnReload').addEventListener('click', reload);

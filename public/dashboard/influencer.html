@@ -16,7 +16,6 @@
   </header>
 
   <main class="max-w-6xl mx-auto px-4 py-6 space-y-8">
-    <!-- 컨트롤 -->
     <section class="bg-white rounded-xl border p-4">
       <div class="flex flex-wrap items-end gap-3">
         <div>
@@ -41,23 +40,12 @@
       </div>
     </section>
 
-    <!-- KPI -->
     <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div class="bg-white rounded-xl border p-4">
-        <div class="text-sm text-gray-500">대기 리워드</div>
-        <div id="kpiPending" class="text-2xl font-semibold">-</div>
-      </div>
-      <div class="bg-white rounded-xl border p-4">
-        <div class="text-sm text-gray-500">확정 리워드</div>
-        <div id="kpiConfirmed" class="text-2xl font-semibold">-</div>
-      </div>
-      <div class="bg-white rounded-xl border p-4">
-        <div class="text-sm text-gray-500">구매확정 주문 수</div>
-        <div id="kpiConfirmedOrders" class="text-2xl font-semibold">-</div>
-      </div>
+      <div class="bg-white rounded-xl border p-4"><div class="text-sm text-gray-500">대기 리워드</div><div id="kpiPending" class="text-2xl font-semibold">-</div></div>
+      <div class="bg-white rounded-xl border p-4"><div class="text-sm text-gray-500">확정 리워드</div><div id="kpiConfirmed" class="text-2xl font-semibold">-</div></div>
+      <div class="bg-white rounded-xl border p-4"><div class="text-sm text-gray-500">구매확정 주문 수</div><div id="kpiConfirmedOrders" class="text-2xl font-semibold">-</div></div>
     </section>
 
-    <!-- 주문/배송 -->
     <section class="bg-white rounded-xl border">
       <div class="p-4 flex items-center justify-between gap-3">
         <h2 class="font-semibold">내 주문·배송 내역</h2>
@@ -87,13 +75,13 @@
       </div>
     </section>
 
-    <!-- 로그 -->
     <section class="bg-white rounded-xl border p-4">
       <div class="text-sm text-gray-500">최근 응답</div>
       <pre id="out" class="bg-gray-900 text-gray-200 rounded p-3 overflow-auto" style="max-height:260px;">{}</pre>
     </section>
   </main>
 
+  <script src="/public/dashboard/app.js"></script>
   <script>
   const $ = id => document.getElementById(id);
   const BASE = window.location.origin;
@@ -115,14 +103,13 @@
   async function loadSummary(){
     const mall_id = $('mall').value, shop_no = $('shop').value, influencer_id = $('inf').value;
     const u = `${BASE}/api/app/influencer/rewards/summary?mall_id=${mall_id}&shop_no=${shop_no}&influencer_id=${influencer_id}`;
-    const r = await fetch(u); const j = await r.json(); showLog(j);
+    const j = await App.json(u); showLog(j);
     if (j.ok){
-      $('kpiPending').textContent   = new Intl.NumberFormat('ko-KR').format(j.pending);
-      $('kpiConfirmed').textContent = new Intl.NumberFormat('ko-KR').format(j.confirmed);
+      $('kpiPending').textContent   = App.number(j.pending);
+      $('kpiConfirmed').textContent = App.number(j.confirmed);
       setPill('요약 OK', true);
     } else setPill('요약 실패', false);
 
-    // 구매확정 주문 수(표 데이터 기반 합산을 위해 주문도 로드)
     await loadOrders();
     const rows = Array.from($('order-list').children);
     $('kpiConfirmedOrders').textContent = rows.filter(tr => tr.dataset.confirmed === '1').length;
@@ -133,7 +120,7 @@
     const sel = $('confirmedSel').value;
     const q = sel==='all' ? '' : `&confirmed=${sel}`;
     const u = `${BASE}/api/app/influencer/orders?mall_id=${mall_id}&shop_no=${shop_no}&influencer_id=${influencer_id}${q}`;
-    const r = await fetch(u); const j = await r.json(); showLog(j);
+    const j = await App.json(u); showLog(j);
 
     const list = j?.orders || [];
     const tbody = $('order-list'); tbody.innerHTML = '';
@@ -150,20 +137,17 @@
         <td class="px-4 py-2">${qty}</td>
         <td class="px-4 py-2">${amt}</td>
         <td class="px-4 py-2">${st}</td>
-        <td class="px-4 py-2">${o.purchaseconfirmation_date||''}</td>
-      `;
+        <td class="px-4 py-2">${o.purchaseconfirmation_date||''}</td>`;
       tbody.appendChild(tr);
     });
   }
 
   document.addEventListener('DOMContentLoaded', async ()=>{
-    // 토큰 상태 피드백
     try{
       const u = `${BASE}/api/cafe24/ops/status?mall_id=${$('mall').value}&shop_no=${$('shop').value}`;
-      const r = await fetch(u); const j = await r.json();
+      const j = await App.json(u);
       setPill(j.ok ? `만료까지 ${j.seconds_left}s` : '토큰 없음', !!j.ok);
     }catch{ setPill('상태 확인 실패', false); }
-
     await loadSummary();
   });
 
