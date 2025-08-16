@@ -4,65 +4,92 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>관리자 대시보드</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- (선택) Tailwind 유틸이 꼭 필요하면 남기되, 친구 CSS가 나중에 오게 두세요 -->
+  <!-- <script src="https://cdn.tailwindcss.com"></script> -->
+
+  <!-- 친구 CSS (우선 적용) -->
   <link rel="stylesheet" href="/public/css/style.css">
+  <style>
+    /* 레이아웃 유틸 약간만 보강 */
+    .grid-4 { display:grid; grid-template-columns: repeat(4, 1fr); gap:16px; }
+    .grid-1 { display:grid; grid-template-columns: 1fr; gap:16px; }
+    .mt-16 { margin-top: 16px; }
+    .mb-0 { margin-bottom: 0; }
+    .muted { color:#6B7280; font-size:12px; }
+    .pill { display:inline-block; padding:4px 8px; border-radius:8px; border:1px solid #e5e7eb; font-size:12px; }
+    .text-right { text-align:right; }
+    .overflow-auto { overflow:auto; }
+  </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-  <header class="bg-white border-b sticky top-0 z-10">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-      <h1 class="text-xl font-semibold">관리자 대시보드</h1>
-      <div class="text-sm text-gray-500">읽기 전용 · Cafe24 연동</div>
+
+<body>
+  <header class="navbar">
+    <div class="container" style="padding:12px 15px; display:flex; align-items:center; justify-content:space-between;">
+      <h1 class="text-white" style="margin:0; font-size:18px; font-weight:600;">관리자 대시보드</h1>
+      <div class="muted" style="color:#e5e7eb;">읽기 전용 · Cafe24 연동</div>
     </div>
   </header>
 
-  <main class="max-w-7xl mx-auto px-4 py-6 space-y-8">
-    <section class="bg-white rounded-xl border p-4">
-      <div class="flex flex-wrap items-end gap-3">
+  <main class="container" style="padding:24px 15px;">
+    <!-- 컨트롤 -->
+    <section class="card" style="padding:16px;">
+      <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end;">
         <div>
-          <label class="block text-sm text-gray-600">mall_id</label>
-          <input id="mall" class="border rounded px-3 py-2" value="hanfen"/>
-        </div>
-        <div>
-          <label class="block text-sm text-gray-600">shop_no</label>
-          <input id="shop" type="number" class="border rounded px-3 py-2 w-24" value="1" min="1"/>
+          <label class="muted">mall_id</label><br/>
+          <input id="mall" class="form-control" value="hanfen" style="width:200px;"/>
         </div>
         <div>
-          <label class="block text-sm text-gray-600">시작일</label>
-          <input id="startDate" type="date" class="border rounded px-3 py-2"/>
+          <label class="muted">shop_no</label><br/>
+          <input id="shop" type="number" class="form-control" value="1" min="1" style="width:100px;"/>
         </div>
         <div>
-          <label class="block text-sm text-gray-600">종료일</label>
-          <input id="endDate" type="date" class="border rounded px-3 py-2"/>
+          <label class="muted">시작일</label><br/>
+          <input id="startDate" type="date" class="form-control" style="width:160px;"/>
         </div>
-        <div class="flex gap-2">
-          <button id="btnStatus" class="bg-blue-600 text-white px-4 py-2 rounded">상태 조회</button>
-          <button id="btnSync"   class="px-4 py-2 rounded border">주문 동기화</button>
-          <button id="btnReload" class="px-4 py-2 rounded border">데이터 새로고침</button>
+        <div>
+          <label class="muted">종료일</label><br/>
+          <input id="endDate" type="date" class="form-control" style="width:160px;"/>
         </div>
-        <div class="ml-auto text-sm text-gray-500">
-          <span id="pill" class="inline-block px-2 py-1 rounded border">-</span>
+        <div style="display:flex; gap:8px;">
+          <button id="btnStatus" class="btn btn-primary">상태 조회</button>
+          <button id="btnSync"   class="btn">주문 동기화</button>
+          <button id="btnReload" class="btn">데이터 새로고침</button>
+        </div>
+        <div style="margin-left:auto;">
+          <span id="pill" class="pill">-</span>
         </div>
       </div>
     </section>
 
-    <section class="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <div class="bg-white rounded-xl border p-4"><div class="text-sm text-gray-500">총 주문</div><div id="kpiAll" class="text-2xl font-semibold">-</div></div>
-      <div class="bg-white rounded-xl border p-4"><div class="text-sm text-gray-500">구매확정</div><div id="kpiConfirmed" class="text-2xl font-semibold">-</div></div>
-      <div class="bg-white rounded-xl border p-4"><div class="text-sm text-gray-500">확정 매출</div><div id="kpiRevenue" class="text-2xl font-semibold">-</div></div>
-      <div class="bg-white rounded-xl border p-4"><div class="text-sm text-gray-500">인플루언서 수</div><div id="kpiInfluencers" class="text-2xl font-semibold">-</div></div>
+    <!-- KPI -->
+    <section class="grid-4 mt-16">
+      <div class="card" style="padding:16px;">
+        <div class="muted">총 주문</div><div id="kpiAll" style="font-size:24px; font-weight:600;">-</div>
+      </div>
+      <div class="card" style="padding:16px;">
+        <div class="muted">구매확정</div><div id="kpiConfirmed" style="font-size:24px; font-weight:600;">-</div>
+      </div>
+      <div class="card" style="padding:16px;">
+        <div class="muted">확정 매출</div><div id="kpiRevenue" style="font-size:24px; font-weight:600;">-</div>
+      </div>
+      <div class="card" style="padding:16px;">
+        <div class="muted">인플루언서 수</div><div id="kpiInfluencers" style="font-size:24px; font-weight:600;">-</div>
+      </div>
     </section>
 
-    <section class="bg-white rounded-xl border">
-      <div class="p-4 flex items-center justify-between gap-3">
-        <h2 class="font-semibold">Top 인플루언서 (확정 매출)</h2>
+    <!-- Top 인플루언서 -->
+    <section class="card mt-16">
+      <div style="padding:16px; display:flex; align-items:center; justify-content:space-between;">
+        <h2 style="margin:0; font-weight:600;">Top 인플루언서 (확정 매출)</h2>
       </div>
-      <div class="overflow-x-auto">
-        <table class="min-w-full text-sm">
-          <thead class="bg-gray-100 text-gray-600">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
             <tr>
-              <th class="text-left px-4 py-2">인플루언서</th>
-              <th class="text-left px-4 py-2">확정 주문 수</th>
-              <th class="text-left px-4 py-2">확정 매출 합계</th>
+              <th>인플루언서</th>
+              <th>확정 주문 수</th>
+              <th>확정 매출 합계</th>
             </tr>
           </thead>
           <tbody id="rank-list"></tbody>
@@ -70,18 +97,19 @@
       </div>
     </section>
 
-    <section class="bg-white rounded-xl border">
-      <div class="p-4"><h2 class="font-semibold">최근 주문</h2></div>
-      <div class="overflow-x-auto">
-        <table class="min-w-full text-sm">
-          <thead class="bg-gray-100 text-gray-600">
+    <!-- 최근 주문 -->
+    <section class="card mt-16">
+      <div style="padding:16px;"><h2 style="margin:0; font-weight:600;">최근 주문</h2></div>
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
             <tr>
-              <th class="text-left px-4 py-2">주문번호</th>
-              <th class="text-left px-4 py-2">대표상품</th>
-              <th class="text-left px-4 py-2">수량</th>
-              <th class="text-left px-4 py-2">금액</th>
-              <th class="text-left px-4 py-2">인플루언서</th>
-              <th class="text-left px-4 py-2">상태</th>
+              <th>주문번호</th>
+              <th>대표상품</th>
+              <th>수량</th>
+              <th>금액</th>
+              <th>인플루언서</th>
+              <th>상태</th>
             </tr>
           </thead>
           <tbody id="order-list"></tbody>
@@ -89,13 +117,13 @@
       </div>
     </section>
 
-    <section class="bg-white rounded-xl border p-4">
-      <div class="text-sm text-gray-500">최근 응답</div>
-      <pre id="out" class="bg-gray-900 text-gray-200 rounded p-3 overflow-auto" style="max-height:260px;">{}</pre>
+    <!-- 로그 -->
+    <section class="card mt-16" style="padding:16px;">
+      <div class="muted">최근 응답</div>
+      <pre id="out" class="fade-in" style="background:#111827; color:#e5e7eb; border-radius:8px; padding:12px; max-height:260px;" class="overflow-auto">{}</pre>
     </section>
   </main>
 
-  <script src="/public/dashboard/app.js"></script>
   <script>
   const $ = id => document.getElementById(id);
   const BASE = window.location.origin;
@@ -103,7 +131,9 @@
   function setPill(txt, ok=true){
     const el = $('pill');
     el.textContent = txt;
-    el.className = 'inline-block px-2 py-1 rounded border ' + (ok ? 'text-green-700 border-green-300' : 'text-amber-700 border-amber-300');
+    el.style.color = ok ? '#065F46' : '#92400E';
+    el.style.borderColor = ok ? '#BBF7D0' : '#FDE68A';
+    el.style.background = ok ? '#D1FAE5' : '#FEF3C7';
   }
   function showLog(obj){ $('out').textContent = JSON.stringify(obj, null, 2); }
   function sumQty(items){ return (items||[]).reduce((s,it)=> s + (Number(it.qty)||0), 0); }
@@ -119,13 +149,16 @@
     const confirmedOrders = orders.filter(o=>!!o.purchaseconfirmation_date);
     const confirmed = confirmedOrders.length;
     const revenue = confirmedOrders.reduce((s,o)=> s + (Number(o.total_price)||0), 0);
+
     const byInf = {};
     confirmedOrders.forEach(o=>{
       const id = o.influencer_id || '—';
       if (!byInf[id]) byInf[id] = { id, orders: 0, revenue: 0 };
-      byInf[id].orders += 1; byInf[id].revenue += Number(o.total_price)||0;
+      byInf[id].orders += 1;
+      byInf[id].revenue += Number(o.total_price)||0;
     });
     const rank = Object.values(byInf).sort((a,b)=> b.revenue - a.revenue);
+
     return { all, confirmed, revenue, rank };
   }
 
@@ -133,7 +166,7 @@
     const mall_id = $('mall').value, shop_no = $('shop').value;
     const q = confirmed==null ? '' : `&confirmed=${confirmed?1:0}`;
     const u = `${BASE}/api/cafe24/orders/list?mall_id=${mall_id}&shop_no=${shop_no}${q}`;
-    const j = await App.json(u); showLog(j);
+    const r = await fetch(u); const j = await r.json(); showLog(j);
     return j?.orders || [];
   }
 
@@ -142,16 +175,21 @@
     const { all, confirmed, revenue, rank } = agg(orders);
     $('kpiAll').textContent       = all;
     $('kpiConfirmed').textContent = confirmed;
-    $('kpiRevenue').textContent   = App.number(revenue);
+    $('kpiRevenue').textContent   = new Intl.NumberFormat('ko-KR').format(revenue);
     $('kpiInfluencers').textContent = new Set(orders.map(o=>o.influencer_id).filter(Boolean)).size;
 
+    // Top 인플루언서
     const tbody1 = $('rank-list'); tbody1.innerHTML = '';
     rank.forEach(r=>{
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td class="px-4 py-2">${r.id}</td><td class="px-4 py-2">${r.orders}</td><td class="px-4 py-2">${App.number(r.revenue)}</td>`;
+      tr.innerHTML = `
+        <td>${r.id}</td>
+        <td>${r.orders}</td>
+        <td>${new Intl.NumberFormat('ko-KR').format(r.revenue)}</td>`;
       tbody1.appendChild(tr);
     });
 
+    // 최근 주문
     const tbody2 = $('order-list'); tbody2.innerHTML = '';
     orders.slice(-50).reverse().forEach(o=>{
       const name = (o.items?.[0]?.name)||'-';
@@ -160,12 +198,12 @@
       const st   = statusLabel(o);
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td class="px-4 py-2">${o.order_no||''}</td>
-        <td class="px-4 py-2">${name}</td>
-        <td class="px-4 py-2">${qty}</td>
-        <td class="px-4 py-2">${amt}</td>
-        <td class="px-4 py-2">${o.influencer_id||'—'}</td>
-        <td class="px-4 py-2">${st}</td>`;
+        <td>${o.order_no||''}</td>
+        <td>${name}</td>
+        <td>${qty}</td>
+        <td>${amt}</td>
+        <td>${o.influencer_id||'—'}</td>
+        <td>${st}</td>`;
       tbody2.appendChild(tr);
     });
   }
@@ -176,14 +214,14 @@
     const end   = $('endDate').value   || '';
     const qs = (start && end) ? `&start=${start}&end=${end}` : '';
     const u = `${BASE}/api/cafe24/orders/sync?mall_id=${mall_id}&shop_no=${shop_no}${qs}`;
-    const j = await App.json(u); showLog(j);
+    const r = await fetch(u); const j = await r.json(); showLog(j);
     await reload();
   }
 
   async function checkStatus(){
     const mall_id = $('mall').value, shop_no = $('shop').value;
     const u = `${BASE}/api/cafe24/ops/status?mall_id=${mall_id}&shop_no=${shop_no}`;
-    const j = await App.json(u); showLog(j);
+    const r = await fetch(u); const j = await r.json(); showLog(j);
     setPill(j.ok ? `만료까지 ${j.seconds_left}s` : '토큰 없음', !!j.ok);
   }
 
@@ -191,10 +229,15 @@
     const today = new Date();
     const end = today.toISOString().slice(0,10);
     const startDate = new Date(today.getTime()-6*24*3600*1000).toISOString().slice(0,10);
-    $('startDate').value = startDate; $('endDate').value = end;
+    $('startDate').value = startDate;
+    $('endDate').value = end;
   }
 
-  document.addEventListener('DOMContentLoaded', async ()=>{ initDates(); await checkStatus(); await reload(); });
+  document.addEventListener('DOMContentLoaded', async ()=>{
+    initDates();
+    await checkStatus();
+    await reload();
+  });
   $('btnStatus').addEventListener('click', checkStatus);
   $('btnSync').addEventListener('click', syncOrders);
   $('btnReload').addEventListener('click', reload);
