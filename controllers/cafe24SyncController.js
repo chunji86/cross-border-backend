@@ -59,3 +59,36 @@ exports.syncCafe24Products = async (req, res) => {
     res.status(500).json({ error: 'Cafe24 상품 동기화 실패' });
   }
 };
+
+// services/cafe24Client.js
+const fetch = require('node-fetch');
+
+async function getAccessToken(mall_id) {
+  const clientId = process.env.CAFE24_CLIENT_ID;
+  const clientSecret = process.env.CAFE24_CLIENT_SECRET;
+  const refreshToken = process.env.CAFE24_REFRESH_TOKEN;
+
+  const url = `https://${mall_id}.cafe24api.com/api/v2/oauth/token`;
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+      client_id: clientId,
+      client_secret: clientSecret
+    })
+  });
+  if (!r.ok) throw new Error(`token_failed_${r.status}`);
+  return r.json(); // { access_token, ... }
+}
+
+async function apiGet(mall_id, path, access_token) {
+  const url = `https://${mall_id}.cafe24api.com${path}`;
+  const r = await fetch(url, {
+    headers: { Authorization: `Bearer ${access_token}` }
+  });
+  return r.json();
+}
+
+module.exports = { getAccessToken, apiGet };

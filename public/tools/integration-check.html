@@ -1,0 +1,131 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"/>
+<title>통합 점검 (Cafe24 ↔ 우리앱)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<style>
+  body{font-family:system-ui, sans-serif; max-width:920px; margin:32px auto; padding:0 16px}
+  h1{font-size:20px;margin:0 0 12px}
+  .grid{display:grid;grid-template-columns:180px 1fr;gap:8px;margin:8px 0;align-items:center}
+  input,select,button{padding:10px;border:1px solid #ddd;border-radius:10px}
+  button{background:#111827;color:#fff;border:0;cursor:pointer}
+  .row{margin:12px 0}
+  pre{background:#0b1020;color:#9ef99e;padding:12px;border-radius:8px;overflow:auto;max-height:260px}
+  .sec{border:1px solid #eee;padding:12px;border-radius:12px;margin:16px 0}
+  small{color:#6b7280}
+</style>
+<h1>통합 점검 (Cafe24 ↔ Backend)</h1>
+
+<div class="sec">
+  <div class="grid"><label>백엔드 BASE</label><input id="api" value="https://cross-border-backend-dc0m.onrender.com"></div>
+  <div class="grid"><label>몰 도메인</label><input id="mallOrigin" placeholder="예: https://hanfen.cafe24.com"></div>
+  <div class="grid"><label>mall_id</label><input id="mall" value="hanfen"></div>
+  <div class="grid"><label>shop_no</label><input id="shop" value="1"></div>
+</div>
+
+<div class="sec">
+  <h3>① 쇼핑몰 세션(whoami) 확인</h3>
+  <div class="grid"><label>whoami 경로</label><input id="who" value="/whoami.html"></div>
+  <div class="row"><button id="btnWho">whoami 가져오기</button></div>
+  <pre id="outWho"></pre>
+  <small>같은 브라우저에서 쇼핑몰에 로그인된 상태여야 합니다.</small>
+</div>
+
+<div class="sec">
+  <h3>② 서버에서 member_no 변환 테스트</h3>
+  <div class="grid"><label>식별자(아이디/이메일/번호)</label><input id="ident" placeholder="예: testid 또는 test@mall.com 또는 12345"></div>
+  <div class="grid"><label>id_type</label>
+    <select id="idtype">
+      <option value="">자동판별</option>
+      <option value="member_id">member_id</option>
+      <option value="email">email</option>
+      <option value="member_no">member_no</option>
+    </select>
+  </div>
+  <div class="row"><button id="btnResolve">서버에서 member_no 조회</button></div>
+  <pre id="outResolve"></pre>
+</div>
+
+<div class="sec">
+  <h3>③ 인플루언서 신청 테스트</h3>
+  <div class="row"><button id="btnApply">apply-with-id 호출</button></div>
+  <pre id="outApply"></pre>
+</div>
+
+<div class="sec">
+  <h3>④ 리워드율 조회 (공개)</h3>
+  <div class="grid"><label>product_no</label><input id="pno" placeholder="예: 1234"></div>
+  <div class="row"><button id="btnRate">리워드율 조회</button></div>
+  <pre id="outRate"></pre>
+</div>
+
+<script>
+const $ = s=>document.querySelector(s);
+function normBase(u){return u.replace(/\/+$/,'');}
+
+$('#btnWho').onclick = async ()=>{
+  const base = normBase($('#mallOrigin').value||'');
+  const path = $('#who').value || '/whoami.html';
+  $('#outWho').textContent = '요청 중...';
+  try{
+    const r = await fetch(base+path, { credentials:'include' });
+    const t = await r.text();
+    try{ $('#outWho').textContent = JSON.stringify(JSON.parse(t), null, 2); }
+    catch{ $('#outWho').textContent = t; }
+  }catch(e){ $('#outWho').textContent = String(e); }
+};
+
+$('#btnResolve').onclick = async ()=>{
+  const api = normBase($('#api').value);
+  const payload = {
+    mall_id: $('#mall').value.trim(),
+    shop_no: $('#shop').value.trim(),
+    identifier: $('#ident').value.trim(),
+    id_type: $('#idtype').value || undefined
+  };
+  $('#outResolve').textContent = JSON.stringify(payload, null, 2) + '\n\n요청 중...';
+  try{
+    const r = await fetch(api+'/api/debug/resolve-member', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const t = await r.text();
+    try{ $('#outResolve').textContent = JSON.stringify(JSON.parse(t), null, 2); }
+    catch{ $('#outResolve').textContent = t; }
+  }catch(e){ $('#outResolve').textContent = String(e); }
+};
+
+$('#btnApply').onclick = async ()=>{
+  const api = normBase($('#api').value);
+  const payload = {
+    mall_id: $('#mall').value.trim(),
+    shop_no: $('#shop').value.trim(),
+    customer_id: $('#ident').value.trim(),   // 문자/숫자 OK (서버가 변환)
+    id_type: $('#idtype').value || undefined,
+    channels: [{type:'YouTube', url:'https://youtube.com/@tester'}]
+  };
+  $('#outApply').textContent = JSON.stringify(payload, null, 2) + '\n\n요청 중...';
+  try{
+    const r = await fetch(api+'/api/roles/apply-with-id', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const t = await r.text();
+    try{ $('#outApply').textContent = JSON.stringify(JSON.parse(t), null, 2); }
+    catch{ $('#outApply').textContent = t; }
+  }catch(e){ $('#outApply').textContent = String(e); }
+};
+
+$('#btnRate').onclick = async ()=>{
+  const api = normBase($('#api').value);
+  const mall_id = $('#mall').value.trim();
+  const shop_no = $('#shop').value.trim();
+  const pno = $('#pno').value.trim();
+  $('#outRate').textContent = '요청 중...';
+  try{
+    const r = await fetch(`${api}/api/app/public/product-reward?mall_id=${encodeURIComponent(mall_id)}&shop_no=${encodeURIComponent(shop_no)}&product_no=${encodeURIComponent(pno)}`);
+    const t = await r.text();
+    try{ $('#outRate').textContent = JSON.stringify(JSON.parse(t), null, 2); }
+    catch{ $('#outRate').textContent = t; }
+  }catch(e){ $('#outRate').textContent = String(e); }
+};
+</script>
+</html>
