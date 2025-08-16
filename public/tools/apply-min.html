@@ -1,0 +1,51 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"/>
+<title>인플루언서 신청(최소)</title>
+<style>
+  body{font-family:system-ui, sans-serif; max-width:600px; margin:40px auto; padding:0 12px}
+  .row{display:grid; grid-template-columns:130px 1fr; gap:8px; margin:10px 0}
+  input,select,button{padding:10px; border:1px solid #ddd; border-radius:10px}
+  button{background:#111827;color:#fff;border:0;cursor:pointer}
+  pre{background:#111;color:#0f0;padding:12px;border-radius:8px;overflow:auto}
+</style>
+<h1>인플루언서 신청 (아이디/이메일로 신청)</h1>
+
+<div class="row"><label>백엔드 BASE</label><input id="api" value="https://cross-border-backend-dc0m.onrender.com"></div>
+<div class="row"><label>mall_id</label><input id="mall" value="hanfen"></div>
+<div class="row"><label>shop_no</label><input id="shop" value="1"></div>
+<div class="row"><label>회원 아이디/이메일</label><input id="cid" placeholder="예: test@mall.com 또는 testid"></div>
+<div class="row"><label>id_type</label>
+  <select id="type"><option value="">자동판별</option><option value="email">email</option><option value="member_id">member_id</option></select>
+</div>
+<div class="row"><label>채널 1</label><input id="ch1" value="https://youtube.com/@tester"></div>
+<div class="row"><label></label><button id="go">신청 보내기</button></div>
+
+<h3>요청</h3><pre id="req"></pre>
+<h3>응답</h3><pre id="res"></pre>
+
+<script>
+document.getElementById('go').onclick = async () => {
+  const api = document.getElementById('api').value.trim().replace(/\/+$/,'');
+  const mall_id = document.getElementById('mall').value.trim();
+  const shop_no = document.getElementById('shop').value.trim();
+  const customer_id = document.getElementById('cid').value.trim();
+  const id_type = document.getElementById('type').value;
+  const channels = [{type:'YouTube', url: document.getElementById('ch1').value.trim()}];
+
+  const payload = { mall_id, shop_no, customer_id, id_type, channels };
+  req.textContent = JSON.stringify(payload, null, 2);
+  try {
+    const r = await fetch(api + '/api/roles/apply-with-id', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const t = await r.text();
+    try{ res.textContent = JSON.stringify(JSON.parse(t), null, 2); }catch{ res.textContent = t; }
+  } catch(e) {
+    res.textContent = String(e);
+  }
+};
+const req = document.getElementById('req');
+const res = document.getElementById('res');
+</script>
+</html>

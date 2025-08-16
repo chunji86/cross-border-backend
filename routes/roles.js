@@ -2,6 +2,9 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
 const { getUser, setUser, listUsers } = require('../utils/roleStore');
+const { applyWithId } = require('../controllers/rolesController');
+
+router.post('/apply-with-id', applyWithId);
 
 const SESSION_SECRET = process.env.SESSION_SECRET || 'dev-session';
 
