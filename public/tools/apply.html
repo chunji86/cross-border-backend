@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>인플루언서 신청 테스트</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 24px auto; padding: 0 12px; }
+    h1 { font-size: 20px; margin-bottom: 12px; }
+    .row { display: grid; grid-template-columns: 140px 1fr; gap: 8px; margin-bottom: 10px; align-items: center; }
+    input, select, textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 8px; }
+    button { padding: 10px 16px; border: 0; border-radius: 10px; cursor: pointer; }
+    .btn { background:#3b82f6; color:#fff; }
+    .btn-secondary { background:#111827; color:#fff; }
+    .chan { display:flex; gap:8px; margin-bottom:8px; }
+    .chan input, .chan select { flex:1; }
+    pre { background:#111; color:#0f0; padding:12px; border-radius:8px; overflow:auto; }
+    .muted { color:#6b7280; font-size:12px; }
+  </style>
+</head>
+<body>
+  <h1>인플루언서 신청 테스트 (apply-with-id)</h1>
+
+  <div class="row">
+    <label>백엔드 도메인</label>
+    <input id="apiBase" placeholder="https://cross-border-backend-...onrender.com" />
+  </div>
+
+  <div class="row">
+    <label>mall_id</label>
+    <input id="mallId" value="hanfen" />
+  </div>
+  <div class="row">
+    <label>shop_no</label>
+    <input id="shopNo" type="number" value="1" />
+  </div>
+  <div class="row">
+    <label>customer_id (member_id)</label>
+    <input id="customerId" placeholder="예: 12345" />
+  </div>
+
+  <div class="row" style="align-items:start">
+    <label>홍보 채널</label>
+    <div>
+      <div id="channels"></div>
+      <button class="btn-secondary" id="addRow" type="button">+ 채널 추가</button>
+      <div class="muted">예: 유형=YouTube, URL=https://youtube.com/@tester</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <label></label>
+    <button class="btn" id="submitBtn" type="button">신청 보내기</button>
+  </div>
+
+  <h2>요청 바디</h2>
+  <pre id="reqBox"></pre>
+
+  <h2>응답</h2>
+  <pre id="respBox"></pre>
+
+  <script>
+    const el = (s) => document.querySelector(s);
+    const channelsWrap = el('#channels');
+    const addRowBtn = el('#addRow');
+    const submitBtn = el('#submitBtn');
+    const reqBox = el('#reqBox');
+    const respBox = el('#respBox');
+
+    function addChannelRow(type='', url='') {
+      const row = document.createElement('div');
+      row.className = 'chan';
+      row.innerHTML = `
+        <select class="c-type">
+          <option ${type==='YouTube'?'selected':''}>YouTube</option>
+          <option ${type==='TikTok'?'selected':''}>TikTok</option>
+          <option ${type==='Instagram'?'selected':''}>Instagram</option>
+          <option ${type==='Blog'?'selected':''}>Blog</option>
+          <option ${type==='Etc'?'selected':''}>Etc</option>
+        </select>
+        <input class="c-url" placeholder="https://..." value="${url}">
+        <button type="button" class="btn-secondary c-del">삭제</button>
+      `;
+      row.querySelector('.c-del').onclick = () => row.remove();
+      channelsWrap.appendChild(row);
+    }
+
+    addRowBtn.onclick = () => addChannelRow();
+    // 초기 한 줄
+    addChannelRow('YouTube', 'https://youtube.com/@tester');
+
+    submitBtn.onclick = async () => {
+      const apiBase = el('#apiBase').value.trim().replace(/\/+$/,'');
+      const mall_id = el('#mallId').value.trim();
+      const shop_no_raw = el('#shopNo').value.trim();
+      const customer_id_raw = el('#customerId').value.trim();
+
+      const shop_no = /^\d+$/.test(shop_no_raw) ? Number(shop_no_raw) : shop_no_raw;
+      const customer_id = /^\d+$/.test(customer_id_raw) ? Number(customer_id_raw) : customer_id_raw;
+
+      const channels = Array.from(channelsWrap.querySelectorAll('.chan')).map(node => {
+        return {
+          type: node.querySelector('.c-type').value,
+          url: node.querySelector('.c-url').value.trim()
+        };
+      }).filter(c => c.type && c.url);
+
+      const body = { mall_id, shop_no, customer_id, channels };
+      reqBox.textContent = JSON.stringify(body, null, 2);
+
+      respBox.textContent = '요청 중...';
+      try {
+        const r = await fetch(apiBase + '/api/roles/apply-with-id', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const t = await r.text();
+        // JSON 파싱 시도
+        try {
+          respBox.textContent = JSON.stringify(JSON.parse(t), null, 2);
+        } catch {
+          respBox.textContent = t;
+        }
+      } catch (e) {
+        respBox.textContent = '요청 실패: ' + e.message;
+      }
+    };
+  </script>
+</body>
+</html>
