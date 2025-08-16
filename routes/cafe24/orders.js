@@ -5,6 +5,65 @@ const router = express.Router();
 const { callCafe24 } = require('../../utils/cafe24Client');
 const { upsertOrders, listOrders } = require('../../utils/orderStore');
 const { attachRcBulk } = require('../../utils/rcAttribution');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
+// 공통: DB에서 influencerId 맵 가져오기
+async function buildInfluencerMapByExternalId(externalIds = []) {
+  if (!externalIds.length) return {};
+  const rows = await prisma.order.findMany({
+    where: { externalId: { in: externalIds.map(String) } },
+    select: { externalId: true, influencerId: true },
+  });
+  const map = {};
+  for (const r of rows) map[r.externalId] = r.influencerId || null;
+  return map;
+}
+
+// GET /api/cafe24/orders/list
+router.get('/list', async (req, res) => {
+  try {
+    const { mall_id, shop_no } = req.query;
+    // ...카페24 API로 주문목록 가져오는 기존 로직 유지 (변수명: orders)
+    // 예: const orders = await cafe24ListOrders(mall_id, shop_no);
+
+    const externalIds = (orders || []).map(o => String(o.order_id));
+    const inflMap = await buildInfluencerMapByExternalId(externalIds);
+
+    // 응답 머지: 각 주문에 influencerId 추가
+    const merged = (orders || []).map(o => ({
+      ...o,
+      influencerId: inflMap[String(o.order_id)] || null,
+    }));
+
+    return res.json({ ok: true, count: merged.length, orders: merged });
+  } catch (err) {
+    console.error('GET /api/cafe24/orders/list error:', err);
+    return res.status(500).json({ error: 'orders list 실패', detail: String(err?.message || err) });
+  }
+});
+
+// GET /api/cafe24/orders/sync
+router.get('/sync', async (req, res) => {
+  try {
+    const { mall_id, shop_no, start, end } = req.query;
+    // ...기간별 주문 불러와 DB upsert하는 기존 로직 유지
+    // upsert 시 externalId, status, totalAmount 등 저장
+
+    // 머지 응답
+    const externalIds = (syncedOrders || []).map(o => String(o.order_id));
+    const inflMap = await buildInfluencerMapByExternalId(externalIds);
+    const merged = (syncedOrders || []).map(o => ({
+      ...o,
+      influencerId: inflMap[String(o.order_id)] || null,
+    }));
+
+    return res.json({ ok: true, count: merged.length, orders: merged });
+  } catch (err) {
+    console.error('GET /api/cafe24/orders/sync error:', err);
+    return res.status(500).json({ error: 'orders sync 실패', detail: String(err?.message || err) });
+  }
+});
 
 // ------- 표시용 유틸 -------
 function sumQty(items = []) {

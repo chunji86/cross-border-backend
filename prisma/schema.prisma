@@ -86,6 +86,7 @@ model Order {
   updatedAt   DateTime    @updatedAt
   user        User?       @relation(fields: [userId], references: [id])
   orderItems  OrderItem[]
+  influencerId   Int?      // 🔸 rc 매칭 저장 필드 (없으면 추가)
    rc         String?  // ✅ 인플루언서 코드 저장
 }
 

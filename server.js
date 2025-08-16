@@ -6,7 +6,7 @@ const path = require('path');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
-
+const dashboardRouter = require('./routes/dashboard');
 const app = express();
 
 // ──────────────────────────────────────────────
@@ -96,6 +96,7 @@ app.get('/dashboard/influencer', (req, res) =>
 app.get('/dashboard/admin',      (req, res) =>
   res.sendFile(path.join(__dirname, 'public', 'dashboard', 'admin.html'))
 );
+app.use('/api/dashboard', dashboardRouter);
 
 // ──────────────────────────────────────────────
 /** API 라우트 (listen 이전) */
